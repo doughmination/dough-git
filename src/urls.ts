@@ -42,12 +42,11 @@ function parseStrict(
   return url;
 }
 
-export const MIRROR_KINDS = ["github", "codeberg"] as const;
+export const MIRROR_KINDS = ["github"] as const;
 export type MirrorKind = (typeof MIRROR_KINDS)[number];
 
 const MIRROR_HOSTS: Record<MirrorKind, string> = {
   github: "github.com",
-  codeberg: "codeberg.org",
 };
 
 export function isMirrorKind(value: string): value is MirrorKind {

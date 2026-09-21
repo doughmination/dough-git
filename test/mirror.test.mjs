@@ -186,7 +186,7 @@ check(
   ) === "missing",
 );
 check(
-  "Codeberg credential challenge -> denied (private OR missing; honest)",
+  "credential challenge -> denied (private OR missing; honest)",
   cls(
     "fatal: could not read Username for 'https://codeberg.org': terminal prompts disabled",
   ) === "denied",

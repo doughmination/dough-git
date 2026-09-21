@@ -25,25 +25,22 @@ const no = (kind, url, why) =>
 
 console.log("\n-- kinds --");
 check("github is a kind", isMirrorKind("github"));
-check("codeberg is a kind", isMirrorKind("codeberg"));
+check("codeberg is not", !isMirrorKind("codeberg"));
 check("gitlab is not", !isMirrorKind("gitlab"));
-check("only two kinds exist", MIRROR_KINDS.length === 2);
+check("only one kind exists", MIRROR_KINDS.length === 1);
 
 console.log("\n-- mirrors are given as user/repo --");
 ok("github", "user/repo", "https://github.com/user/repo");
-ok("codeberg", "user/repo", "https://codeberg.org/user/repo");
 ok("github", "Clove-Web/dough-git", "https://github.com/Clove-Web/dough-git");
 ok("github", "user/repo.git", "https://github.com/user/repo");
 ok("github", "  user/repo  ", "https://github.com/user/repo");
 ok("github", "user/repo/", "https://github.com/user/repo");
-ok("codeberg", "My-User/my.repo_1", "https://codeberg.org/My-User/my.repo_1");
 
 check("the path form is normalised", mirrorPath("github", " user/repo.git ") === "user/repo");
 check("a slug round-trips for display", mirrorSlug("github", mirrorUrl("github", "a/b")) === "a/b");
 check("a foreign url is left alone by the slug", mirrorSlug("github", "https://x.test/a/b") === "https://x.test/a/b");
 
 console.log("\n-- profile repositories may start with a dot --");
-ok("codeberg", "Clove-Web/.profile", "https://codeberg.org/Clove-Web/.profile");
 ok("github", "Clove-Web/.github", "https://github.com/Clove-Web/.github");
 ok("github", ".owner/.repo", "https://github.com/.owner/.repo");
 no("github", "user/.", "a bare dot repo");
@@ -68,16 +65,13 @@ no("github", `${"a".repeat(101)}/repo`, "an over-long owner");
 
 console.log("\n-- valid mirror URLs --");
 ok("github", "https://github.com/user/repo", "https://github.com/user/repo");
-ok("codeberg", "https://codeberg.org/user/repo", "https://codeberg.org/user/repo");
 ok("github", "https://github.com/user/repo.git", "https://github.com/user/repo");
 ok("github", "https://github.com/user/repo/", "https://github.com/user/repo");
 ok("github", "  https://github.com/user/repo  ", "https://github.com/user/repo");
 ok("github", "https://GitHub.com/user/repo", "https://github.com/user/repo");
-ok("codeberg", "https://codeberg.org/My-User/my.repo_1", "https://codeberg.org/My-User/my.repo_1");
 
 console.log("\n-- wrong host --");
 no("github", "https://codeberg.org/user/repo", "codeberg URL under github kind");
-no("codeberg", "https://github.com/user/repo", "github URL under codeberg kind");
 no("github", "https://gitlab.com/user/repo", "unrelated forge");
 no("github", "https://evil.test/user/repo", "arbitrary host");
 no("github", "https://github.com.evil.test/user/repo", "suffixed host");
