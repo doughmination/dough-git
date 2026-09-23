@@ -374,11 +374,11 @@ const QUOTE = /^\s{0,3}>/;
 const ALERT = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION|FROZEN|ASIDE)\]\s*$/i;
 
 const ALERT_ICON: Record<string, string> = {
-  note: "info-box",
+  note: "info",
   tip: "lightbulb",
   important: "flag",
   warning: "warning-diamond",
-  caution: "square-alert",
+  caution: "warning-octagon",
   frozen: "snowflake",
   aside: "wind",
 };
@@ -386,7 +386,7 @@ const ALERT_ICON: Record<string, string> = {
 function alertBlock(kind: string, body: string[], depth: number): string {
   const key = kind.toLowerCase();
   const label = key.charAt(0).toUpperCase() + key.slice(1);
-  const glyph = icon(ALERT_ICON[key] ?? "info-box");
+  const glyph = icon(ALERT_ICON[key] ?? "info");
   const inner = blocks(body, depth + 1);
   const title = `<p class="md-alert-title">${glyph}${label}</p>`;
   return `<div class="md-alert md-alert-${key}">\n${title}\n${inner}\n</div>`;

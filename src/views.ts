@@ -114,9 +114,9 @@ function layout(opts: {
   const settings = opts.user
     ? `<a class="${c.navLink}" href="/settings">${icon("gear")}settings</a>
        <form method="post" action="/auth/logout" class="${c.navForm}">
-         <button type="submit" class="${c.navLink} ${c.navButton}">${icon("logout")}logout</button>
+         <button type="submit" class="${c.navLink} ${c.navButton}">${icon("sign-out")}logout</button>
        </form>`
-    : `<a class="${c.navLink}" href="/auth/login">${icon("login")}login</a>`;
+    : `<a class="${c.navLink}" href="/auth/login">${icon("sign-in")}login</a>`;
 
   const description = metaText(opts.description || config.description);
   const url = opts.path ? esc(config.baseUrl + opts.path) : esc(config.baseUrl);
@@ -185,7 +185,7 @@ function repoTable(
       return `      <tr class="${c.repoRow}">
         <td class="${c.repoName}">${icon("git-branch")} ${owner}<a href="${base(r.owner, r.name)}/">${esc(r.name)}</a>${shared}</td>
         <td class="${c.repoDesc}">${esc(r.description)}</td>
-        <td class="${c.repoVis}"><span class="${c.withIcon}">${icon(r.isPublic ? "unlock" : "lock", 13)}${r.isPublic ? "public" : "private"}</span></td>
+        <td class="${c.repoVis}"><span class="${c.withIcon}">${icon(r.isPublic ? "lock-open" : "lock", 13)}${r.isPublic ? "public" : "private"}</span></td>
         <td class="${c.repoIdle}">${fmtDate(r.lastCommit)}</td>
       </tr>`;
     })
@@ -430,7 +430,7 @@ ${renderMarkdown(opts.readme.text)}
     <div class="${c.repoTabs}">
       <form method="post" action="${base(opts.owner, opts.name)}/visibility">
         <input type="hidden" name="public" value="${opts.isPublic ? "" : "on"}">
-        <button type="submit">${icon(opts.isPublic ? "lock" : "unlock")}make ${opts.isPublic ? "private" : "public"}</button>
+        <button type="submit">${icon(opts.isPublic ? "lock" : "lock-open")}make ${opts.isPublic ? "private" : "public"}</button>
       </form>
       <form method="post" action="${base(opts.owner, opts.name)}/delete" data-confirm="Delete ${esc(title)} permanently? This cannot be undone.">
         <button type="submit">${icon("trash")}delete repository</button>
@@ -444,14 +444,14 @@ ${collaboratorSection(opts.owner, opts.name, opts.collaborators ?? [])}`
       <label class="${c.cloneLabel} ${c.withIcon}" for="repo-description">${icon("note")}description</label>
       <input id="repo-description" class="${c.grow}" type="text" name="description" maxlength="300"
         value="${esc(opts.rawDescription)}" placeholder="what this repository is for">
-      <button type="submit">${icon("save")}save</button>
+      <button type="submit">${icon("floppy-disk")}save</button>
     </form>`
     : opts.rawDescription
       ? `    <p class="${c.repoDesc}">${esc(opts.rawDescription)}</p>`
       : "";
 
   const body = `    <h1 class="${c.repoTitle}"><a class="${c.ownerLink}" href="/${esc(opts.owner)}">${esc(opts.owner)}</a>/${esc(opts.name)}</h1>
-    <p class="${c.repoDesc}"><span class="${c.withIcon}">${icon(opts.isPublic ? "unlock" : "lock", 13)}${opts.isPublic ? "public" : "private"}</span>${opts.canPush && !isOwner ? `<span class="${c.badge}">${icon("upload", 11)}you can push</span>` : ""}</p>
+    <p class="${c.repoDesc}"><span class="${c.withIcon}">${icon(opts.isPublic ? "lock-open" : "lock", 13)}${opts.isPublic ? "public" : "private"}</span>${opts.canPush && !isOwner ? `<span class="${c.badge}">${icon("upload", 11)}you can push</span>` : ""}</p>
 ${repoNav(opts.owner, opts.name, "summary", q)}
 ${descriptionForm}
     ${revPicker(opts.refs, opts.rev)}
@@ -499,7 +499,7 @@ function mirrorSection(
       const status = statuses.get(link.kind) ?? null;
       const view = describeMirror(link, status, nowSec);
       return `      <div class="${c.mirrorRow}">
-        <span class="${c.mirrorKind}"><a class="${c.withIcon}" href="${esc(link.url)}" rel="nofollow noopener noreferrer" title="${esc(link.kind)}">${icon(link.kind === "github" ? "github" : "git-branch")}${esc(mirrorSlug(link.kind, link.url))}</a></span>
+        <span class="${c.mirrorKind}"><a class="${c.withIcon}" href="${esc(link.url)}" rel="nofollow noopener noreferrer" title="${esc(link.kind)}">${icon(link.kind === "github" ? "github-logo" : "git-branch")}${esc(mirrorSlug(link.kind, link.url))}</a></span>
         <span class="${view.cls} ${c.withIcon}">${icon(view.glyph)}${esc(view.label)}</span>
         <span class="${c.commitHash}">${esc(view.sha)}</span>
         <span class="${c.repoDesc}">${esc(view.detail)}</span>
@@ -509,7 +509,7 @@ function mirrorSection(
 
   const local = localSha
     ? `      <div class="${c.mirrorRow}">
-        <span class="${c.mirrorKind} ${c.withIcon}">${icon("home")}local</span>
+        <span class="${c.mirrorKind} ${c.withIcon}">${icon("house")}local</span>
         <span class="${c.statusMuted}">this repository</span>
         <span class="${c.commitHash}">${esc(localSha.slice(0, 7))}</span>
         <span></span>
@@ -519,7 +519,7 @@ function mirrorSection(
   const checkButton =
     canCheck && links.some((l) => !l.isPrivate)
       ? `      <form method="post" action="${base(owner, name)}/mirrors/check">
-        <button type="submit">${icon("reload")}check now</button>
+        <button type="submit">${icon("arrow-clockwise")}check now</button>
       </form>`
       : "";
 
@@ -535,7 +535,7 @@ ${checkButton}
   const field = (kind: MirrorKind) => {
     const existing = links.find((l) => l.kind === kind);
     return `      <div class="${c.formRow}">
-        <label class="${c.cloneLabel} ${c.withIcon}" for="mirror-${kind}">${icon(kind === "github" ? "github" : "git-branch")}${kind}</label>
+        <label class="${c.cloneLabel} ${c.withIcon}" for="mirror-${kind}">${icon(kind === "github" ? "github-logo" : "git-branch")}${kind}</label>
         <input id="mirror-${kind}" class="${c.grow}" type="text" name="${kind}"
           value="${esc(existing ? mirrorSlug(kind, existing.url) : "")}"
           placeholder="user/repo" pattern="[^\\s/]+/[^\\s/]+/?" autocapitalize="off" spellcheck="false">
@@ -549,11 +549,11 @@ ${MIRROR_KINDS.map(field).join("\n")}
       <p class="${c.repoDesc}">Give the <code>user/repo</code> on ${esc(MIRROR_KINDS.map(mirrorHost).join(" or "))} &mdash; not a full URL.
       Mark a mirror <em>private</em> to skip status checks — they are anonymous, so a private
       mirror would otherwise always look unreachable. Clear a field to remove it.</p>
-      <button type="submit">${icon("save")}save mirrors</button>
+      <button type="submit">${icon("floppy-disk")}save mirrors</button>
     </form>`
     : "";
 
-  return `    <h2 class="${c.sectionTitle}">${icon("cloud-server")}external mirrors</h2>
+  return `    <h2 class="${c.sectionTitle}">${icon("hard-drives")}external mirrors</h2>
 ${body}
 ${form}`;
 }
@@ -601,7 +601,7 @@ function describeMirror(
     diverged: { label: "Diverged", glyph: "warning-diamond", cls: c.statusBad },
     out_of_sync: { label: "Out of sync", glyph: "warning-diamond", cls: c.statusBad },
     denied: { label: "Private or missing", glyph: "lock", cls: c.statusWarn },
-    missing: { label: "Repository missing", glyph: "close", cls: c.statusBad },
+    missing: { label: "Repository missing", glyph: "x", cls: c.statusBad },
   };
 
   if (status.error) {
@@ -609,7 +609,7 @@ function describeMirror(
     const stale = status.okAt !== null && nowSec - status.okAt > 24 * 3600;
     return {
       label: known ? known.label : "Unavailable",
-      glyph: known ? known.glyph : "circle-question",
+      glyph: known ? known.glyph : "question",
       cls: known ? c.statusMuted : c.statusBad,
       sha: status.remoteSha ? status.remoteSha.slice(0, 7) : "",
       detail: status.okAt ? `last verified ${ago(nowSec - status.okAt)} ago` : "never verified",
@@ -628,7 +628,7 @@ function describeMirror(
   const stale = status.okAt !== null && nowSec - status.okAt > 24 * 3600;
   return {
     label: known?.label ?? "Unavailable",
-    glyph: known?.glyph ?? "circle-question",
+    glyph: known?.glyph ?? "question",
     cls: known?.cls ?? c.statusBad,
     sha: status.remoteSha ? status.remoteSha.slice(0, 7) : "",
     detail: [status.detail, status.okAt ? `checked ${ago(nowSec - status.okAt)} ago` : ""]
@@ -664,7 +664,7 @@ function collaboratorSection(
         <td>
           <form method="post" action="${action}/remove">
             <input type="hidden" name="slug" value="${esc(person.slug)}">
-            <button type="submit">${icon("user-x")}remove</button>
+            <button type="submit">${icon("user-minus")}remove</button>
           </form>
         </td>
       </tr>`,
@@ -872,7 +872,7 @@ export function tokensPage(opts: {
         <td class="${c.commitDate}">${t.last_used ? fmtDate(t.last_used) : "never"}</td>
         <td>
           <form method="post" action="/settings/tokens/${esc(t.id)}/revoke">
-            <button type="submit">${icon("close")}revoke</button>
+            <button type="submit">${icon("x")}revoke</button>
           </form>
         </td>
       </tr>`,
@@ -897,7 +897,7 @@ ${settingsNav("tokens")}
     repositories under <code>${esc(authUser)}/</code>.</p>
 ${created}
     <form method="post" action="/settings/tokens" class="${c.cloneBox}">
-      <label class="${c.cloneLabel} ${c.withIcon}">${icon("label")}label</label>
+      <label class="${c.cloneLabel} ${c.withIcon}">${icon("tag")}label</label>
       <input type="text" name="label" placeholder="laptop, backup cron, ...">
       <button type="submit">${icon("plus")}create token</button>
     </form>
@@ -948,7 +948,7 @@ export function settingsPage(opts: {
 ${settingsNav("account")}
 ${opts.saved ? `    <p class="${c.statusGood}">${esc(opts.saved)}</p>` : ""}
 
-    <h2 class="${c.sectionTitle}">${icon("discord")}discord notifications</h2>
+    <h2 class="${c.sectionTitle}">${icon("discord-logo")}discord notifications</h2>
     <p class="${c.repoDesc}">Announces repositories being created and deleted, and commits being
     pushed. Only repositories you own are announced, and only to this webhook.</p>
     <section class="${c.cloneBox}">
@@ -958,7 +958,7 @@ ${webhookError}
         <label class="${c.cloneLabel} ${c.withIcon}" for="discord-url">${icon("link")}webhook</label>
         <input id="discord-url" class="${c.grow}" type="url" name="url" autocomplete="off"
           placeholder="https://discord.com/api/webhooks/…">
-        <button type="submit">${icon("save")}save</button>
+        <button type="submit">${icon("floppy-disk")}save</button>
       </form>
 ${clear}
     </section>
@@ -975,7 +975,7 @@ ${clear}
         Check mirror status automatically when viewing a repository</label>
         <br><span class="${c.repoDesc}">Off means mirrors are only checked when you press
         <em>check now</em>.</span></p>
-      <button type="submit">${icon("save")}save preferences</button>
+      <button type="submit">${icon("floppy-disk")}save preferences</button>
     </form>
 
     <h2 class="${c.sectionTitle}">${icon("user")}account</h2>
@@ -1032,7 +1032,7 @@ export function deletedPage(opts: {
         <td>
           <form method="post" action="/settings/deleted/restore">
             <input type="hidden" name="entry" value="${esc(e.entry)}">
-            <button type="submit">${icon("undo")}restore</button>
+            <button type="submit">${icon("arrow-counter-clockwise")}restore</button>
           </form>
         </td>
         <td>
