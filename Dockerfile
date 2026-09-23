@@ -1,8 +1,8 @@
 # syntax=docker/dockerfile:1
 
-# Node runs the TypeScript sources directly, so there is no build stage.
+# Bun runs the TypeScript sources directly, so there is no build stage.
 # git is needed for upload-pack / receive-pack, the viewer, and imports.
-FROM node:26-bookworm-slim
+FROM oven/bun:1-slim
 WORKDIR /app
 ENV NODE_ENV=production
 
@@ -10,8 +10,8 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends git ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-COPY package.json package-lock.json* ./
-RUN npm ci --omit=dev
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile --production
 
 COPY src ./src
 COPY public ./public
@@ -25,5 +25,4 @@ ENV MINIGIT_HOST=0.0.0.0 \
 EXPOSE 4010
 VOLUME ["/srv/git"]
 
-# --experimental-sqlite enables the built-in node:sqlite used by the token store.
-CMD ["node", "--experimental-sqlite", "--disable-warning=ExperimentalWarning", "src/server.ts"]
+CMD ["bun", "src/server.ts"]

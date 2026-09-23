@@ -4,9 +4,6 @@
 
 import { Hono, type Context } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
-import { serve } from "@hono/node-server";
-import { createReadStream, existsSync, statSync } from "node:fs";
-import { Readable } from "node:stream";
 import { join, resolve, sep } from "node:path";
 import { config, oidcEnabled } from "./config.ts";
 import {
@@ -188,18 +185,9 @@ app.use("*", async (c, next) => {
   await next();
 });
 
-const CONTENT_TYPES: Record<string, string> = {
-  ".css": "text/css; charset=utf-8",
-  ".js": "text/javascript; charset=utf-8",
-  ".svg": "image/svg+xml",
-  ".png": "image/png",
-  ".ico": "image/x-icon",
-  ".woff2": "font/woff2",
-};
-
 const STATIC_ROOT = resolve(config.staticDir);
 
-app.get("/static/*", (c) => {
+app.get("/static/*", async (c) => {
   let rel: string;
   try {
     rel = decodeURIComponent(c.req.path.replace(/^\/static\//, ""));
@@ -212,15 +200,12 @@ app.get("/static/*", (c) => {
   if (full !== STATIC_ROOT && !full.startsWith(STATIC_ROOT + sep)) {
     return c.notFound();
   }
-  if (!existsSync(full) || !statSync(full).isFile()) return c.notFound();
+  // Bun.file picks the Content-Type from the extension
+  const file = Bun.file(full);
+  if (!(await file.exists())) return c.notFound();
 
-  const ext = full.slice(full.lastIndexOf("."));
-  const stream = Readable.toWeb(
-    createReadStream(full),
-  ) as unknown as ReadableStream<Uint8Array>;
-  return new Response(stream, {
+  return new Response(file, {
     headers: {
-      "Content-Type": CONTENT_TYPES[ext] ?? "application/octet-stream",
       "Cache-Control": "public, max-age=3600",
     },
   });
@@ -1004,40 +989,41 @@ async function sweepTrash(): Promise<void> {
   }
 }
 
-serve(
-  {
-    fetch: app.fetch,
-    port: config.port,
-    hostname: config.host,
-  },
-  async () => {
-    console.log(`dough-git listening on http://${config.host}:${config.port}`);
-    console.log(`  repos root: ${config.reposRoot}`);
-    console.log(`  static dir: ${config.staticDir}`);
-    console.log(`  base url:   ${config.baseUrl}`);
-    console.log(`  oidc:       ${oidcEnabled ? "enabled" : "disabled"}`);
-    console.log(
-      `  trash:      ${config.trashDays > 0 ? `${config.trashDays}d, swept every 6h` : "kept forever"}`,
-    );
-    console.log(`  logins:     accounts on ${config.oidc.issuer || "(no issuer)"} (limit with the client's allowed groups)`);
-    if (oidcEnabled) {
-      try {
-        const iss = await oidcIssuer();
-        console.log(`  oidc issuer (must equal the callback's iss): ${iss}`);
-        console.log(`  oidc redirect_uri: ${config.baseUrl}/auth/callback`);
-      } catch (err) {
-        console.error(
-          "  oidc discovery FAILED (check OIDC_ISSUER):",
-          err instanceof Error ? err.message : err,
-        );
-      }
-    }
+Bun.serve({
+  fetch: app.fetch,
+  port: config.port,
+  hostname: config.host,
+  // Big pushes and imports can sit quiet for minutes; never cut them off
+  idleTimeout: 0,
+});
 
+void (async () => {
+  console.log(`dough-git listening on http://${config.host}:${config.port}`);
+  console.log(`  repos root: ${config.reposRoot}`);
+  console.log(`  static dir: ${config.staticDir}`);
+  console.log(`  base url:   ${config.baseUrl}`);
+  console.log(`  oidc:       ${oidcEnabled ? "enabled" : "disabled"}`);
+  console.log(
+    `  trash:      ${config.trashDays > 0 ? `${config.trashDays}d, swept every 6h` : "kept forever"}`,
+  );
+  console.log(`  logins:     accounts on ${config.oidc.issuer || "(no issuer)"} (limit with the client's allowed groups)`);
+  if (oidcEnabled) {
+    try {
+      const iss = await oidcIssuer();
+      console.log(`  oidc issuer (must equal the callback's iss): ${iss}`);
+      console.log(`  oidc redirect_uri: ${config.baseUrl}/auth/callback`);
+    } catch (err) {
+      console.error(
+        "  oidc discovery FAILED (check OIDC_ISSUER):",
+        err instanceof Error ? err.message : err,
+      );
+    }
+  }
+
+  void sweepTrash();
+  sweepSessions();
+  setInterval(() => {
     void sweepTrash();
     sweepSessions();
-    setInterval(() => {
-      void sweepTrash();
-      sweepSessions();
-    }, SWEEP_INTERVAL_MS).unref();
-  },
-);
+  }, SWEEP_INTERVAL_MS).unref();
+})();
