@@ -19,6 +19,7 @@ import {
   oidcIssuer,
   authenticateGit,
   gitActor,
+  sessionSlug,
   type SessionUser,
 } from "./auth.ts";
 import { SESSION_TTL, purgeExpiredSessions } from "./sessions.ts";
@@ -63,6 +64,8 @@ import {
   repoExists,
   initBareRepo,
   createRepo,
+  importRepo,
+  type CreateResult,
   trashRepo,
   listTrash,
   restoreFromTrash,
@@ -102,6 +105,20 @@ type Env = { Variables: { user: SessionUser | null } };
 const app = new Hono<Env>({ strict: false });
 
 const SITE_ORIGIN = new URL(config.baseUrl).origin;
+
+function fail(
+  c: Context<Env>,
+  title: string,
+  message: string,
+  status: 400 | 403 | 404 | 409 | 501 = 400,
+) {
+  return c.html(view.messagePage({ title, message, user: c.get("user") }), status);
+}
+
+// The signed-in user, on routes behind the login guard
+function me(c: Context<Env>): SessionUser {
+  return c.get("user")!;
+}
 
 const GIT_RPC = /\/(?:git-upload-pack|git-receive-pack)$/;
 
@@ -211,14 +228,7 @@ app.get("/static/*", (c) => {
 
 app.get("/auth/login", async (c) => {
   if (!oidcEnabled) {
-    return c.html(
-      view.messagePage({
-        title: "login unavailable",
-        message: "Single sign-on (OIDC) is not configured on this instance.",
-        user: null,
-      }),
-      501,
-    );
+    return fail(c, "login unavailable", "Single sign-on (OIDC) is not configured on this instance.", 501);
   }
   const { redirectUrl, txCookie } = await startLogin();
   setCookie(c, OAUTH_COOKIE, txCookie, {
@@ -268,17 +278,11 @@ app.get("/auth/callback", async (c) => {
     );
   }
   if (!session) {
-    return c.html(
-      view.messagePage({
-        title: "login failed",
-        message:
-          idpError === "access_denied"
-            ? "Your SSO account isn't allowed to use this instance. Ask an SSO admin to add you to its allowed groups."
-            : "Could not complete sign-in. Please try again.",
-        user: null,
-      }),
-      403,
-    );
+    const message =
+      idpError === "access_denied"
+        ? "Your SSO account isn't allowed to use this instance. Ask an SSO admin to add you to its allowed groups."
+        : "Could not complete sign-in. Please try again.";
+    return fail(c, "login failed", message, 403);
   }
   setCookie(c, SESSION_COOKIE, session, {
     httpOnly: true,
@@ -300,51 +304,46 @@ app.post("/auth/logout", async (c) => {
 
 app.get("/auth/logout", (c) => c.redirect("/"));
 
+// Settings and repo creation need a signed-in user
+for (const path of ["/settings", "/settings/*", "/new", "/new/*"]) {
+  app.use(path, async (c, next) => {
+    if (c.get("user")) return next();
+    return c.req.method === "GET" ? c.redirect("/auth/login") : c.text("forbidden\n", 403);
+  });
+}
+
 app.get("/settings", (c) => {
-  const user = c.get("user");
-  if (!user) return c.redirect("/auth/login");
+  const user = me(c);
   return c.html(
     view.settingsPage({
       user,
-      settings: getSettings(view.ownerOf(user)),
-      saved: c.req.query("saved") ? "saved." : null,
+      settings: getSettings(sessionSlug(user)),
+      saved: Boolean(c.req.query("saved")),
     }),
   );
 });
 
 app.post("/settings/discord", async (c) => {
-  const user = c.get("user");
-  if (!user) return c.text("forbidden\n", 403);
-  const owner = view.ownerOf(user);
   const form = await c.req.formData();
   const raw = String(form.get("url") ?? "").trim();
 
-  if (!raw) {
-    setDiscordWebhook(owner, null);
-    return c.redirect("/settings?saved=1");
-  }
-  const url = discordWebhookUrl(raw);
-  if (!url) {
-    return c.html(
-      view.messagePage({
-        title: "not a discord webhook",
-        message:
-          "That doesn't look like a Discord webhook URL. It should start with " +
-          "https://discord.com/api/webhooks/ — nothing else is accepted.",
-        user,
-      }),
-      400,
+  // Blank clears the webhook; anything else must be a real Discord one
+  const url = raw ? discordWebhookUrl(raw) : null;
+  if (raw && !url) {
+    return fail(
+      c,
+      "not a discord webhook",
+      "That doesn't look like a Discord webhook URL. It should start with " +
+        "https://discord.com/api/webhooks/ — nothing else is accepted.",
     );
   }
-  setDiscordWebhook(owner, url);
+  setDiscordWebhook(sessionSlug(me(c)), url);
   return c.redirect("/settings?saved=1");
 });
 
 app.post("/settings/prefs", async (c) => {
-  const user = c.get("user");
-  if (!user) return c.text("forbidden\n", 403);
   const form = await c.req.formData();
-  setPrefs(view.ownerOf(user), {
+  setPrefs(sessionSlug(me(c)), {
     defaultPrivate: form.get("default_private") != null,
     discordPrivate: form.get("discord_private") != null,
     mirrorAuto: form.get("mirror_auto") != null,
@@ -353,36 +352,39 @@ app.post("/settings/prefs", async (c) => {
 });
 
 app.get("/settings/tokens", (c) => {
-  const user = c.get("user");
-  if (!user) return c.redirect("/auth/login");
-  const owner = view.ownerOf(user);
-  return c.html(view.tokensPage({ tokens: listTokens(owner), user }));
+  const user = me(c);
+  return c.html(
+    view.tokensPage({
+      tokens: listTokens(sessionSlug(user)),
+      user,
+    }),
+  );
 });
 
 app.post("/settings/tokens", async (c) => {
-  const user = c.get("user");
-  if (!user) return c.text("forbidden\n", 403);
-  const owner = view.ownerOf(user);
+  const user = me(c);
+  const owner = sessionSlug(user);
   const form = await c.req.formData();
-  const plaintext = createToken(String(form.get("label") ?? ""), owner, user.sub);
+  const newToken = createToken(String(form.get("label") ?? ""), owner, user.sub);
   return c.html(
-    view.tokensPage({ tokens: listTokens(owner), user, newToken: plaintext }),
+    view.tokensPage({
+      tokens: listTokens(owner),
+      user,
+      newToken,
+    }),
   );
 });
 
 app.post("/settings/tokens/:id/revoke", (c) => {
-  const user = c.get("user");
-  if (!user) return c.text("forbidden\n", 403);
-  revokeToken(c.req.param("id"), view.ownerOf(user));
+  revokeToken(c.req.param("id"), sessionSlug(me(c)));
   return c.redirect("/settings/tokens");
 });
 
 app.get("/tokens", (c) => c.redirect("/settings/tokens", 301));
 
 app.get("/settings/deleted", async (c) => {
-  const user = c.get("user");
-  if (!user) return c.redirect("/auth/login");
-  const owner = view.ownerOf(user);
+  const user = me(c);
+  const owner = sessionSlug(user);
 
   for (const gone of await purgeExpired(owner)) {
     clearRepoMetadata({ owner, name: gone.name });
@@ -399,30 +401,19 @@ app.get("/settings/deleted", async (c) => {
 });
 
 app.post("/settings/deleted/restore", async (c) => {
-  const user = c.get("user");
-  if (!user) return c.text("forbidden\n", 403);
-  const owner = view.ownerOf(user);
+  const owner = sessionSlug(me(c));
   const form = await c.req.formData();
 
   const result = await restoreFromTrash(owner, String(form.get("entry") ?? ""));
   if (!result.ok || !result.meta) {
-    return c.html(
-      view.messagePage({
-        title: "could not restore",
-        message: result.error ?? "unknown error",
-        user,
-      }),
-      400,
-    );
+    return fail(c, "could not restore", result.error ?? "unknown error");
   }
 
   const ref = { owner, name: result.meta.name };
   for (const grant of result.meta.grants) {
     if (!isLevel(grant.level)) continue;
     if (!findUserBySlug(grant.slug)) {
-      console.warn(
-        `[trash] restoring ${refSlug(ref)}: dropping grant for unknown user ${grant.slug}`,
-      );
+      console.warn(`[trash] restoring ${refSlug(ref)}: dropping grant for unknown user ${grant.slug}`);
       continue;
     }
     setCollaborator(ref, grant.slug, grant.level);
@@ -433,9 +424,7 @@ app.post("/settings/deleted/restore", async (c) => {
 });
 
 app.post("/settings/deleted/purge", async (c) => {
-  const user = c.get("user");
-  if (!user) return c.text("forbidden\n", 403);
-  const owner = view.ownerOf(user);
+  const owner = sessionSlug(me(c));
   const form = await c.req.formData();
   const entry = String(form.get("entry") ?? "");
 
@@ -447,29 +436,36 @@ app.post("/settings/deleted/purge", async (c) => {
   return c.redirect("/settings/deleted");
 });
 
-app.post("/new", async (c) => {
-  const user = c.get("user");
-  if (!user) return c.text("forbidden\n", 403);
-  const form = await c.req.formData();
-  const owner = view.ownerOf(user);
-  const result = await createRepo(owner, String(form.get("name") ?? ""));
+app.get("/new", (c) => c.html(view.newRepoPage(me(c))));
+
+// Shared tail of "create empty" and "import": metadata, visibility, notify
+async function finishCreate(c: Context<Env>, result: CreateResult, verb: string) {
   if (!result.ok || !result.ref) {
-    return c.html(
-      view.messagePage({
-        title: result.reserved ? "that name is still reserved" : "could not create repo",
-        message: result.error ?? "unknown error",
-        user,
-      }),
-      result.reserved ? 409 : 400,
-    );
+    const title = result.reserved ? "that name is still reserved" : `could not ${verb} repo`;
+    return fail(c, title, result.error ?? "unknown error", result.reserved ? 409 : 400);
   }
+
+  const owner = sessionSlug(me(c));
   clearRepoMetadata(result.ref);
   const startsPublic = !getSettings(owner).defaultPrivate;
-  if (startsPublic) {
-    await setRepoPublic(result.ref, true);
-  }
+  if (startsPublic) await setRepoPublic(result.ref, true);
   notifyRepoCreated(result.ref, owner, startsPublic);
   return c.redirect(`/${result.ref.owner}/${result.ref.name}/`);
+}
+
+app.post("/new", async (c) => {
+  const form = await c.req.formData();
+  const result = await createRepo(sessionSlug(me(c)), String(form.get("name") ?? ""));
+  return finishCreate(c, result, "create");
+});
+
+app.post("/new/import", async (c) => {
+  const form = await c.req.formData();
+  const url = String(form.get("url") ?? "");
+  const name = String(form.get("name") ?? "");
+  const result = await importRepo(sessionSlug(me(c)), name, url);
+  if (result.ref) console.log(`[import] ${refSlug(result.ref)} from ${url}`);
+  return finishCreate(c, result, "import");
 });
 
 function refFromPath(c: Context<Env>, nameParam: "name" | "repo"): RepoRef | null {
@@ -614,7 +610,7 @@ app.post("/:owner/:repo/git-receive-pack", (c) => rpcHandler(c, "git-receive-pac
 
 function viewerOf(c: { get: (k: "user") => SessionUser | null }): string | null {
   const user = c.get("user");
-  return user ? view.ownerOf(user) : null;
+  return user ? sessionSlug(user) : null;
 }
 
 function readable(all: RepoSummary[], viewer: string | null): RepoSummary[] {
@@ -632,22 +628,11 @@ app.get("/", async (c) => {
   const viewer = viewerOf(c);
   const all = (await listRepos()).filter((r) => !isProfileRepo(r.name));
   const shared = viewer ? new Set(sharedWith(viewer).map((r) => `${r.owner}/${r.name}`)) : null;
-  return c.html(
-    view.repoListPage(readable(all, viewer), user, {
-      sharedSlugs: shared,
-    }),
-  );
+  return c.html(view.repoListPage(readable(all, viewer), user, shared));
 });
 
 function notFound(c: Context<Env>) {
-  return c.html(
-    view.messagePage({
-      title: "not found",
-      message: "No such repository, or you don't have access.",
-      user: c.get("user"),
-    }),
-    404,
-  );
+  return fail(c, "not found", "No such repository, or you don't have access.", 404);
 }
 
 interface ViewableRepo {
@@ -745,7 +730,7 @@ async function ownedRef(c: Context<Env>): Promise<RepoRef | null> {
   const user = c.get("user");
   if (!user) return null;
   const ref = refFromPath(c, "name");
-  if (!ref || ref.owner !== view.ownerOf(user)) return null;
+  if (!ref || ref.owner !== sessionSlug(user)) return null;
   return (await repoExists(ref)) ? ref : null;
 }
 
@@ -780,25 +765,16 @@ app.post("/:owner/:name/delete", async (c) => {
 
   const result = await trashRepo(ref, {
     deletedAt: Math.floor(Date.now() / 1000),
-    deletedBy: view.ownerOf(user),
+    deletedBy: sessionSlug(user),
     grants: listCollaborators(ref).map((g) => ({
       slug: g.slug,
       level: g.level,
     })),
   });
-  if (!result.ok) {
-    return c.html(
-      view.messagePage({
-        title: "could not delete",
-        message: result.error ?? "unknown error",
-        user,
-      }),
-      400,
-    );
-  }
+  if (!result.ok) return fail(c, "could not delete", result.error ?? "unknown error");
 
   clearRepoMetadata(ref);
-  notifyRepoDeleted(ref, view.ownerOf(user), wasPublic);
+  notifyRepoDeleted(ref, sessionSlug(user), wasPublic);
   return c.redirect("/settings/deleted");
 });
 
@@ -813,26 +789,15 @@ app.post("/:owner/:name/collaborators", async (c) => {
 
   const invited = findUserBySlug(slug);
   if (!invited) {
-    return c.html(
-      view.messagePage({
-        title: "no such user",
-        message:
-          `Nobody on this instance goes by "${slug}". They have to sign in ` +
-          `to this instance once before they can be added.`,
-        user: c.get("user"),
-      }),
-      400,
+    return fail(
+      c,
+      "no such user",
+      `Nobody on this instance goes by "${slug}". They have to sign in ` +
+        `to this instance once before they can be added.`,
     );
   }
   if (invited.slug === ref.owner) {
-    return c.html(
-      view.messagePage({
-        title: "already the owner",
-        message: "You can't add yourself as a collaborator on your own repo.",
-        user: c.get("user"),
-      }),
-      400,
-    );
+    return fail(c, "already the owner", "You can't add yourself as a collaborator on your own repo.");
   }
 
   setCollaborator(ref, invited.slug, level);
@@ -924,7 +889,7 @@ app.get("/:owner/:name", async (c) => {
   const readmeFile = commits.length ? await readme(ref, rev) : null;
 
   const user = c.get("user");
-  const isOwner = user != null && view.ownerOf(user) === ref.owner;
+  const isOwner = user != null && sessionSlug(user) === ref.owner;
   const canPush = access === "write";
 
   const statuses = getStatuses(ref);
@@ -990,16 +955,12 @@ app.post("/:owner/:name/mirrors", async (c) => {
   }
 
   if (rejected.length > 0) {
-    return c.html(
-      view.messagePage({
-        title: "that isn't a mirror URL",
-        message:
-          `The ${rejected.join(" and ")} link was refused. Give the repository as ` +
-          `owner/repo — for example doughmination/dough-git — and it is looked up on ` +
-          `${mirrorHost(rejected[0] as MirrorKind)}.`,
-        user: c.get("user"),
-      }),
-      400,
+    return fail(
+      c,
+      "that isn't a mirror URL",
+      `The ${rejected.join(" and ")} link was refused. Give the repository as ` +
+        `owner/repo — for example doughmination/dough-git — and it is looked up on ` +
+        `${mirrorHost(rejected[0] as MirrorKind)}.`,
     );
   }
 

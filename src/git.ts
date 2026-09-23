@@ -86,13 +86,17 @@ export function ownerSlug(raw: string): string {
   return slug || "user";
 }
 
-export async function repoExists(ref: RepoRef): Promise<boolean> {
+async function pathExists(path: string): Promise<boolean> {
   try {
-    await access(join(refDir(ref), "HEAD"));
+    await access(path);
     return true;
   } catch {
     return false;
   }
+}
+
+export function repoExists(ref: RepoRef): Promise<boolean> {
+  return pathExists(join(refDir(ref), "HEAD"));
 }
 
 export async function initBareRepo(ref: RepoRef): Promise<void> {
@@ -110,10 +114,7 @@ export interface CreateResult {
   reserved?: boolean;
 }
 
-export async function createRepo(
-  owner: string,
-  nameRaw: string,
-): Promise<CreateResult> {
+async function claimName(owner: string, nameRaw: string): Promise<CreateResult> {
   const ref = safeRef(owner, nameRaw);
   if (!ref) {
     return { ok: false, error: "invalid name — use letters, digits, . _ -" };
@@ -130,8 +131,13 @@ export async function createRepo(
       reserved: true,
     };
   }
-  await initBareRepo(ref);
   return { ok: true, ref };
+}
+
+export async function createRepo(owner: string, nameRaw: string): Promise<CreateResult> {
+  const claim = await claimName(owner, nameRaw);
+  if (claim.ref) await initBareRepo(claim.ref);
+  return claim;
 }
 
 async function pruneEmptyDir(dir: string): Promise<void> {
@@ -140,15 +146,6 @@ async function pruneEmptyDir(dir: string): Promise<void> {
       await rm(dir, { recursive: true, force: true });
     }
   } catch {
-  }
-}
-
-async function pathExists(p: string): Promise<boolean> {
-  try {
-    await access(p);
-    return true;
-  } catch {
-    return false;
   }
 }
 
@@ -368,13 +365,8 @@ export async function purgeAllExpired(): Promise<TrashEntry[]> {
   return purged;
 }
 
-export async function isRepoPublic(ref: RepoRef): Promise<boolean> {
-  try {
-    await access(join(refDir(ref), config.publicMarker));
-    return true;
-  } catch {
-    return false;
-  }
+export function isRepoPublic(ref: RepoRef): Promise<boolean> {
+  return pathExists(join(refDir(ref), config.publicMarker));
 }
 
 export async function setRepoPublic(ref: RepoRef, isPublic: boolean): Promise<void> {
@@ -570,6 +562,62 @@ export async function lsRemote(url: string): Promise<LsRemoteResult> {
   }
 }
 
+const IMPORT_TIMEOUT_MS = 10 * 60_000;
+
+// Any public https forge, but never a host on this machine or a raw IP
+const IMPORT_URL = /^https:\/\/[A-Za-z0-9.-]+\.[A-Za-z]{2,}\/[A-Za-z0-9._~\/-]+$/;
+
+export function importUrl(raw: string): string | null {
+  const value = raw.trim().replace(/\/+$/, "");
+  if (value.length > 400 || !IMPORT_URL.test(value) || value.includes("..")) return null;
+  return value;
+}
+
+// "https://codeberg.org/someone/thing.git" -> "thing"
+export function nameFromUrl(url: string): string {
+  return (url.split("/").pop() ?? "").replace(/\.git$/, "");
+}
+
+export async function importRepo(
+  owner: string,
+  nameRaw: string,
+  urlRaw: string,
+): Promise<CreateResult> {
+  const url = importUrl(urlRaw);
+  if (!url) {
+    return {
+      ok: false,
+      error: "give a public https clone URL, like https://codeberg.org/owner/repo.git",
+    };
+  }
+
+  const claim = await claimName(owner, nameRaw.trim() || nameFromUrl(url));
+  if (!claim.ref) return claim;
+
+  const dir = refDir(claim.ref);
+  await mkdir(join(config.reposRoot, owner), { recursive: true });
+  try {
+    await exec(
+      "git",
+      [...REMOTE_HARDENING, "clone", "--bare", "--quiet", "--", url, dir],
+      {
+        timeout: IMPORT_TIMEOUT_MS,
+        killSignal: "SIGKILL",
+        encoding: "utf8",
+        env: REMOTE_ENV,
+        windowsHide: true,
+      },
+    );
+    await git(dir, ["remote", "remove", "origin"]);
+    return claim;
+  } catch (err) {
+    await rm(dir, { recursive: true, force: true });
+    const e = err as { stderr?: string; killed?: boolean; message?: string };
+    const { message } = classifyRemoteError(e.stderr ?? e.message ?? "", e.killed === true);
+    return { ok: false, error: `could not import ${url}: ${message}` };
+  }
+}
+
 export async function localMirrorRefs(ref: RepoRef): Promise<Map<string, string>> {
   const out = new Map<string, string>();
   try {
@@ -683,6 +731,11 @@ export async function setLinks(ref: RepoRef, links: MirrorLink[]): Promise<void>
   await writeFile(path, serialiseLinks(valid) + "\n");
 }
 
+// "refs/heads/main" -> "main", "refs/tags/v1" -> "tag v1"
+export function shortRef(name: string): string {
+  return name.replace(/^refs\/heads\//, "").replace(/^refs\/tags\//, "tag ");
+}
+
 export interface RefList {
   branches: string[];
   tags: string[];
@@ -726,17 +779,7 @@ export async function resolveRev(
   if (!wanted) return fallback;
   if (refs.branches.includes(wanted) || refs.tags.includes(wanted)) return wanted;
 
-  const sha = safeObjectId(wanted);
-  if (sha) {
-    try {
-      await git(refDir(ref), ["cat-file", "-e", `${sha}^{commit}`]);
-      return sha;
-    } catch {
-      return fallback;
-    }
-  }
-
-  return fallback;
+  return (await hasCommit(ref, wanted)) ? wanted : fallback;
 }
 
 async function lastCommitTime(dir: string): Promise<number | null> {
@@ -756,18 +799,12 @@ export interface Commit {
   subject: string;
 }
 
-export async function log(ref: RepoRef, refspec: string, limit = 50): Promise<Commit[]> {
-  const dir = refDir(ref);
-  const format = ["%H", "%an", "%ae", "%at", "%s"].join(FNUL);
+const COMMIT_FORMAT = ["%H", "%an", "%ae", "%at", "%s"].join(FNUL) + FREC;
+
+async function readCommits(ref: RepoRef, args: string[]): Promise<Commit[]> {
   let out: string;
   try {
-    out = await git(dir, [
-      "log",
-      `--max-count=${limit}`,
-      `--format=${format}${FREC}`,
-      refspec,
-      "--",
-    ]);
+    out = await git(refDir(ref), ["log", `--format=${COMMIT_FORMAT}`, ...args, "--"]);
   } catch {
     return [];
   }
@@ -787,6 +824,10 @@ export async function log(ref: RepoRef, refspec: string, limit = 50): Promise<Co
     });
 }
 
+export function log(ref: RepoRef, refspec: string, limit = 50): Promise<Commit[]> {
+  return readCommits(ref, [`--max-count=${limit}`, refspec]);
+}
+
 export async function logRange(
   ref: RepoRef,
   from: string | null,
@@ -794,38 +835,13 @@ export async function logRange(
   limit: number,
 ): Promise<Commit[]> {
   const toId = safeObjectId(to);
-  if (!toId) return [];
   const fromId = from ? safeObjectId(from) : null;
-  if (from && !fromId) return [];
+  if (!toId || (from && !fromId)) return [];
 
-  const dir = refDir(ref);
-  const format = ["%H", "%an", "%ae", "%at", "%s"].join(FNUL);
-  let out: string;
-  try {
-    out = await git(dir, [
-      "log",
-      `--max-count=${Math.max(1, Math.floor(limit))}`,
-      `--format=${format}${FREC}`,
-      ...(fromId ? [`${fromId}..${toId}`] : [toId]),
-      "--",
-    ]);
-  } catch {
-    return [];
-  }
-  return out
-    .split(REC)
-    .map((row) => row.replace(/^\n/, ""))
-    .filter((row) => row.trim().length > 0)
-    .map((row) => {
-      const [hash, author, email, time, subject] = row.split(NUL);
-      return {
-        hash: hash ?? "",
-        author: author ?? "",
-        email: email ?? "",
-        time: Number(time ?? 0),
-        subject: subject ?? "",
-      };
-    });
+  return readCommits(ref, [
+    `--max-count=${Math.max(1, Math.floor(limit))}`,
+    fromId ? `${fromId}..${toId}` : toId,
+  ]);
 }
 
 export interface TreeEntry {

@@ -106,7 +106,3 @@ export function recordWebhookResult(owner: string, error: string | null): void {
     `UPDATE user_settings SET webhook_error = ?, webhook_error_at = ? WHERE owner = ?`,
   ).run(error ? error.slice(0, 200) : null, error ? now() : null, owner);
 }
-
-export function dropSettings(owner: string): void {
-  db.prepare("DELETE FROM user_settings WHERE owner = ?").run(owner);
-}

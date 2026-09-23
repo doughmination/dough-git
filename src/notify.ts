@@ -6,6 +6,7 @@ import {
   refSlug,
   logRange,
   isAncestor,
+  shortRef,
   type Commit,
   type RepoRef,
 } from "./git.ts";
@@ -63,10 +64,6 @@ export interface Embed {
   url?: string;
   description: string;
   color: number;
-}
-
-function shortRef(ref: string): string {
-  return ref.replace(/^refs\/heads\//, "").replace(/^refs\/tags\//, "tag ");
 }
 
 function repoUrl(repo: RepoRef): string {

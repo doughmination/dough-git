@@ -1,13 +1,12 @@
 {
   "name": "dough-git",
   "version": "1.0.0",
-  "description": "A minimal self-hosted git mirror: HTTP clone/pull/push + cgit-style viewer, gated by PocketID (OIDC). Styled with Vanilla Extract.",
+  "description": "A minimal self-hosted git mirror: HTTP clone/pull/push + cgit-style viewer, gated by OIDC SSO.",
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "node scripts/build.mjs",
-    "start": "node --experimental-sqlite --disable-warning=ExperimentalWarning dist/server.js",
-    "dev": "npm run build && npm start",
+    "start": "node --experimental-sqlite --disable-warning=ExperimentalWarning src/server.ts",
+    "dev": "node --experimental-sqlite --disable-warning=ExperimentalWarning --watch src/server.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-sqlite --disable-warning=ExperimentalWarning --experimental-strip-types --test test/*.test.mjs"
   },
@@ -19,12 +18,6 @@
   },
   "devDependencies": {
     "@types/node": "^26.6.2",
-    "@vanilla-extract/css": "^1.21.2",
-    "@vanilla-extract/esbuild-plugin": "^2.3.22",
-    "esbuild": "^0.28.2",
     "typescript": "^7.0.2"
-  },
-  "allowScripts": {
-    "esbuild": true
   }
 }

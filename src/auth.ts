@@ -26,13 +26,13 @@ function sign(payload: string): string {
     .digest("base64url");
 }
 
-export function signValue(data: object, ttlSeconds: number): string {
+function signValue(data: object, ttlSeconds: number): string {
   const body = { ...data, exp: Math.floor(Date.now() / 1000) + ttlSeconds };
   const payload = b64url(JSON.stringify(body));
   return `${payload}.${sign(payload)}`;
 }
 
-export function verifyValue<T>(token: string | undefined): T | null {
+function verifyValue<T>(token: string | undefined): T | null {
   if (!token) return null;
   const dot = token.lastIndexOf(".");
   if (dot === -1) return null;
@@ -103,7 +103,7 @@ export function authenticateGit(header: string | undefined): GitAuth {
       kind: "rejected",
       message:
         "this token predates per-user ownership and can't be attributed — " +
-        "sign in to the web UI once to adopt it, or mint a new one at /tokens",
+        "sign in to the web UI once to adopt it, or mint a new one at /settings/tokens",
     };
   }
 
@@ -312,5 +312,3 @@ export async function logout(token: string | undefined): Promise<string> {
     return home;
   }
 }
-
-export { oidcEnabled };

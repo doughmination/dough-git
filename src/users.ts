@@ -46,12 +46,6 @@ export function findUserBySub(sub: string): UserRow | null {
     .get(sub) as unknown as UserRow) ?? null;
 }
 
-export function listUsers(): UserRow[] {
-  return db
-    .prepare("SELECT * FROM users ORDER BY slug")
-    .all() as unknown as UserRow[];
-}
-
 function uniqueSlug(preferred: string, sub: string): string {
   const taken = (slug: string) => {
     const row = findUserBySlug(slug);

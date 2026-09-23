@@ -1,0 +1,743 @@
+/* public/style.css
+ * LICENCED DASL-1.0 (c) Clove Twilight
+ */
+
+:root {
+  color-scheme: dark;
+
+  --accent: #c22a44;
+  --gilt: #d8b775;
+  --danger: #ff4d5e;
+  --success: #5f9e78;
+
+  --bg-deep: #030207;
+  --bg-raised: #100a10;
+  --bg: #07050a;
+  --surface: #1a1016;
+  --surface-hi: #241318;
+  --border: #34141c;
+
+  --text-faint: #6b4a53;
+  --text-dim: #82616a;
+  --text-muted: #9c848c;
+  --text-soft: #c7b6ba;
+  --text: #ece3e6;
+
+  --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --display: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+  --mono: ui-monospace, "Cascadia Code", Menlo, monospace;
+  --radius: 8px;
+
+  --cursor-normal: url("https://m.doughmination.gay/cursors/sandrone/Normal.png") 0 0, default;
+  --cursor-link: url("https://m.doughmination.gay/cursors/sandrone/Link.png") 4 0, pointer;
+  --cursor-text: url("https://m.doughmination.gay/cursors/sandrone/Text.png") 4 9, text;
+  --cursor-no: url("https://m.doughmination.gay/cursors/sandrone/Unavailable.png") 0 0, not-allowed;
+}
+
+/* Base */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: linear-gradient(135deg, var(--bg) 0%, var(--bg-raised) 60%, var(--bg-deep) 100%);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--text);
+  cursor: var(--cursor-normal);
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+a,
+button,
+label:has(input[type="checkbox"]) {
+  cursor: var(--cursor-link);
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+th {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.85em;
+}
+
+code,
+pre {
+  font-family: var(--mono);
+}
+
+pre {
+  margin: 0;
+  overflow-x: auto;
+}
+
+/* Form controls */
+
+button,
+input[type="text"],
+input[type="url"],
+select {
+  font: inherit;
+  line-height: 1.5;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--surface-hi);
+  color: var(--text-soft);
+}
+
+button:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+button:active {
+  background: var(--surface);
+}
+
+input[type="text"],
+input[type="url"],
+select {
+  min-width: 0;
+  background: var(--bg-deep);
+  color: var(--text);
+  cursor: var(--cursor-text);
+}
+
+input::placeholder {
+  color: var(--text-faint);
+}
+
+input:hover,
+select:hover {
+  border-color: var(--text-faint);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: var(--cursor-no);
+}
+
+input[type="checkbox"] {
+  accent-color: var(--accent);
+  vertical-align: -0.1em;
+  margin: 0 0.35rem 0 0;
+}
+
+.icon {
+  display: inline-block;
+  vertical-align: middle;
+  flex-shrink: 0;
+  fill: currentColor;
+  shape-rendering: crispEdges;
+}
+
+/* Site chrome */
+
+.site-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-raised);
+}
+
+.site-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--text);
+}
+
+.site-logo {
+  width: 1.5rem;
+  height: 1.5rem;
+  object-fit: cover;
+}
+
+.site-who {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--accent);
+}
+
+.nav-form {
+  display: inline;
+  margin: 0;
+}
+
+/* A form button that looks like the nav links beside it */
+.nav-link.nav-button,
+.nav-link.nav-button:hover,
+.nav-link.nav-button:active {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+}
+
+.nav-link.nav-button:hover {
+  text-decoration: underline;
+}
+
+.user {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.content {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1.25rem;
+}
+
+.site-footer {
+  color: var(--text-dim);
+  text-align: center;
+  padding: 2rem 0;
+  font-size: 0.85em;
+}
+
+/* Avatars and profiles */
+
+.avatar {
+  position: relative;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface-hi);
+  color: var(--text-soft);
+  font-weight: 600;
+  line-height: 1;
+  overflow: hidden;
+  user-select: none;
+}
+
+.avatar-sm {
+  width: 25px;
+  height: 25px;
+  font-size: 13px;
+}
+
+.avatar-lg {
+  width: 60px;
+  height: 60px;
+  font-size: 30px;
+}
+
+.avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-head {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.5rem 0 1.5rem;
+}
+
+/* Headings */
+
+.page-title {
+  font-size: 1.4rem;
+  margin: 0.25rem 0 1rem;
+}
+
+.repo-title,
+.profile-name {
+  font-family: var(--display);
+  color: var(--gilt);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  margin: 0.25rem 0 1rem;
+}
+
+.repo-title {
+  font-size: 1.55rem;
+}
+
+.profile-name {
+  font-size: 1.6rem;
+  margin: 0;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 1.05rem;
+  margin: 1.5rem 0 0.5rem;
+  color: var(--text-soft);
+}
+
+/* Text helpers */
+
+.with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.empty {
+  color: var(--text-dim);
+}
+
+.mono {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.repo-name {
+  font-family: var(--display);
+  color: var(--gilt);
+  font-size: 1.05em;
+  font-weight: 500;
+}
+
+.right {
+  text-align: right;
+}
+
+.good {
+  color: var(--success);
+}
+
+.warn {
+  color: var(--accent);
+}
+
+.bad {
+  color: var(--danger);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.05rem 0.4rem;
+  margin-left: 0.4rem;
+  border: 1px solid var(--border);
+  background: var(--surface-hi);
+  font-family: var(--mono);
+  font-size: 0.75em;
+  color: var(--text-muted);
+  vertical-align: middle;
+}
+
+/* Boxes, rows, tabs */
+
+.box {
+  margin: 1rem 0;
+  padding: 0.6rem 0.9rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.label {
+  color: var(--text-muted);
+  margin-right: 0.5rem;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.grow {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-soft);
+}
+
+.tab.active {
+  background: var(--surface-hi);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.rev-picker {
+  margin: 0.75rem 0;
+}
+
+.code {
+  display: block;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.commit-meta {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.2rem 1rem;
+  margin: 0.75rem 0;
+}
+
+.mirror-row {
+  display: grid;
+  grid-template-columns: minmax(5rem, auto) minmax(9rem, auto) auto 1fr;
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  padding: 0.3rem 0;
+}
+
+.mirror-kind {
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+@media screen and (max-width: 40rem) {
+  .mirror-row {
+    grid-template-columns: 1fr;
+    gap: 0.1rem;
+    padding-bottom: 0.6rem;
+  }
+}
+
+/* Rendered README */
+
+.readme {
+  margin: 1rem 0;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow-wrap: break-word;
+}
+
+.readme > :first-child,
+.readme .md-alert > :first-child {
+  margin-top: 0;
+}
+
+.readme > :last-child,
+.readme .md-alert > :last-child {
+  margin-bottom: 0;
+}
+
+.readme :is(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--display);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  margin: 1.5rem 0 0.75rem;
+}
+
+.readme h1 {
+  font-size: 1.5rem;
+}
+
+.readme h2 {
+  font-size: 1.25rem;
+}
+
+.readme h3 {
+  font-size: 1.05rem;
+}
+
+.readme :is(h4, h5, h6) {
+  font-size: 0.95rem;
+  color: var(--text-soft);
+}
+
+.readme :is(h1, h2) {
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.readme :is(p, ul, ol, pre, blockquote, table) {
+  margin: 0.75rem 0;
+}
+
+.readme code {
+  background: var(--surface-hi);
+  padding: 0.12em 0.35em;
+  font-size: 0.9em;
+}
+
+.readme pre {
+  padding: 0.75rem 1rem;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.readme pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.readme blockquote {
+  padding: 0.1rem 0 0.1rem 1rem;
+  border-left: 3px solid var(--border);
+  color: var(--text-muted);
+}
+
+.readme :is(ul, ol) {
+  padding-left: 1.5rem;
+}
+
+.readme li {
+  margin: 0.25rem 0;
+}
+
+.readme hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 1.5rem 0;
+}
+
+.readme img {
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.readme table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.readme [data-align="center"] {
+  text-align: center;
+}
+
+.readme [data-align="right"] {
+  text-align: right;
+}
+
+.readme del {
+  color: var(--text-dim);
+}
+
+/* README alerts: > [!NOTE] and friends */
+
+.readme .md-alert {
+  --alert: var(--border);
+  margin: 0.75rem 0;
+  padding: 0.5rem 1rem;
+  border-left: 3px solid var(--alert);
+  border-radius: var(--radius);
+  color: var(--text-soft);
+}
+
+.readme .md-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.5rem;
+  font-weight: 600;
+  color: var(--alert);
+}
+
+.readme .md-alert-note {
+  --alert: #47b6ee;
+}
+
+.readme .md-alert-tip {
+  --alert: #96d94f;
+}
+
+.readme .md-alert-important {
+  --alert: #b58fe0;
+}
+
+.readme .md-alert-warning {
+  --alert: #f2b23c;
+}
+
+.readme .md-alert-caution {
+  --alert: #ef6144;
+}
+
+.readme .md-alert-frozen {
+  --alert: #b8dfe8;
+  background: rgba(184, 223, 232, 0.05);
+}
+
+.readme .md-alert-aside {
+  --alert: #74c2a8;
+  border-left-width: 2px;
+  color: var(--text-muted);
+}
+
+.readme .md-alert-aside .md-alert-title {
+  font-weight: 400;
+}
+
+/* README pride text: gradient-filled words */
+
+.readme .md-pride {
+  font-weight: 600;
+  color: var(--text);
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .readme .md-pride {
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .readme .md-pride {
+    background-image: none !important;
+    color: var(--text);
+    -webkit-text-fill-color: var(--text);
+  }
+}
+
+.readme .md-pride a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.readme .md-pride code {
+  color: var(--text-soft);
+  -webkit-text-fill-color: var(--text-soft);
+}
+
+.readme .md-pride-gay {
+  background-image: linear-gradient(96deg, #13a888, #26ceaa, #98e8c1, #7bade2, #918cdf);
+}
+
+.readme .md-pride-lesbian {
+  background-image: linear-gradient(96deg, #ec7151, #e8782e, #ee9d67, #f2f7fb, #d675af, #ee63b5);
+}
+
+.readme .md-pride-bisexual {
+  background-image: linear-gradient(96deg, #ee64ab, #bf80ba, #6894ee);
+}
+
+.readme .md-pride-transgender {
+  background-image: linear-gradient(96deg, #67c9ee, #f5a9b8, #f2f7fb, #f5a9b8, #67c9ee);
+}
+
+.readme .md-pride-pansexual {
+  background-image: linear-gradient(96deg, #ee65a7, #e6c619, #37aae9);
+}
+
+.readme .md-pride-asexual {
+  background-image: linear-gradient(96deg, #8fa4bc, #c3d3e2, #f2f7fb, #ec54ec);
+}
+
+.readme .md-pride-aromantic {
+  background-image: linear-gradient(96deg, #3fab44, #a7d379, #f2f7fb, #c3d3e2, #8fa4bc);
+}
+
+.readme .md-pride-nonbinary {
+  background-image: linear-gradient(96deg, #eae446, #f2f7fb, #b480dc, #8fa4bc);
+}
+
+.readme .md-pride-queer {
+  background-image: linear-gradient(96deg, #ef6d6d, #e68a19, #e6d719, #13ac41, #7994dd, #c578d5);
+}

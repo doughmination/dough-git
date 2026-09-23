@@ -8,7 +8,9 @@ import {
   localMirrorRefs,
   hasCommit,
   isAncestor,
+  listRefs,
   refSlug,
+  shortRef,
   type RepoRef,
   type MirrorLink,
 } from "./git.ts";
@@ -341,10 +343,6 @@ export function mismatchReasons(
   ];
 }
 
-function shortRef(name: string): string {
-  return name.replace(/^refs\/heads\//, "").replace(/^refs\/tags\//, "tag ");
-}
-
 export function describeMismatch(cmp: Comparison): string {
   const base = `${cmp.matched}/${cmp.total} refs`;
   const parts = [
@@ -362,7 +360,6 @@ async function defaultBranchRef(
   ref: RepoRef,
   local: Map<string, string>,
 ): Promise<string | null> {
-  const { listRefs } = await import("./git.ts");
   try {
     const refs = await listRefs(ref);
     const head = `refs/heads/${refs.head}`;
