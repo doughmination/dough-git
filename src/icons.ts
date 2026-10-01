@@ -5,58 +5,44 @@
 import { readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 
-export type IconWeight =
-  | "thin"
-  | "light"
-  | "regular"
-  | "bold"
-  | "fill"
-  | "duotone";
+// Stroke width in rendered pixels, kept constant at every size
+// (lucide's absoluteStrokeWidth behaviour)
+const STROKE_WIDTH = 2.25;
+const GRID = 24;
 
 const require = createRequire(import.meta.url);
-const cache = new Map<string, { viewBox: string; body: string }>();
+const cache = new Map<string, string>();
 
-// "house" + "bold" -> "@phosphor-icons/core/bold/house-bold.svg"
-function assetPath(name: string, weight: IconWeight): string {
-  const fileName = weight === "regular" ? name : `${name}-${weight}`;
-  return `@phosphor-icons/core/${weight}/${fileName}.svg`;
+// "house" -> "lucide-static/icons/house.svg"
+function assetPath(name: string): string {
+  return `lucide-static/icons/${name}.svg`;
 }
 
-function parse(
-  name: string,
-  weight: IconWeight,
-): { viewBox: string; body: string } {
-  const cacheKey = `${name}:${weight}`;
-  const cached = cache.get(cacheKey);
+function parse(name: string): string {
+  const cached = cache.get(name);
   if (cached !== undefined) return cached;
 
   let source: string;
   try {
-    source = readFileSync(require.resolve(assetPath(name, weight)), "utf8");
+    source = readFileSync(require.resolve(assetPath(name)), "utf8");
   } catch {
-    throw new Error(`icon: unknown phosphor icon "${name}" (${weight})`);
+    throw new Error(`icon: unknown lucide icon "${name}"`);
   }
 
-  const viewBox = /viewBox="([^"]+)"/.exec(source)?.[1] ?? "0 0 256 256";
+  // Skip the licence comment and the <svg ...> open tag
+  const open = source.indexOf("<svg");
   const body = source
-    .slice(source.indexOf(">") + 1, source.lastIndexOf("</svg>"))
-    .replace(/\s*\n\s*/g, "")
+    .slice(source.indexOf(">", open) + 1, source.lastIndexOf("</svg>"))
+    .replace(/\s*\n\s*/g, " ")
     .replace(/>\s+</g, "><")
     .trim();
 
-  const parsed = {
-    viewBox,
-    body,
-  };
-  cache.set(cacheKey, parsed);
-  return parsed;
+  cache.set(name, body);
+  return body;
 }
 
-export function icon(
-  name: string,
-  size = 16,
-  weight: IconWeight = "regular",
-): string {
-  const { viewBox, body } = parse(name, weight);
-  return `<svg class="icon" viewBox="${viewBox}" width="${size}" height="${size}" fill="currentColor" aria-hidden="true">${body}</svg>`;
+export function icon(name: string, size = 16): string {
+  const body = parse(name);
+  const stroke = +((STROKE_WIDTH * GRID) / size).toFixed(3);
+  return `<svg class="icon" viewBox="0 0 ${GRID} ${GRID}" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
 }

@@ -377,8 +377,8 @@ const ALERT_ICON: Record<string, string> = {
   note: "info",
   tip: "lightbulb",
   important: "flag",
-  warning: "warning-diamond",
-  caution: "warning-octagon",
+  warning: "triangle-alert",
+  caution: "octagon-alert",
   frozen: "snowflake",
   aside: "wind",
 };

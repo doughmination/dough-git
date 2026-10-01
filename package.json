@@ -11,8 +11,8 @@
     "test": "bun test/run.ts"
   },
   "dependencies": {
-    "@phosphor-icons/core": "^2.1.1",
     "hono": "^4.13.8",
+    "lucide-static": "^1.49.0",
     "openid-client": "^6.8.8"
   },
   "devDependencies": {

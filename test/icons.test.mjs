@@ -12,43 +12,50 @@ function check(label, cond) {
 
 const names = [
   "git-branch",
-  "git-commit",
+  "git-commit-horizontal",
   "git-merge",
   "folder",
   "folder-plus",
+  "file",
   "file-text",
-  "article",
-  "note",
-  "label",
+  "newspaper",
+  "sticky-note",
+  "tag",
   "lock",
-  "unlock",
+  "lock-open",
   "user",
   "users",
   "user-plus",
-  "user-x",
+  "user-minus",
   "key",
-  "gear",
-  "sliders",
-  "login",
-  "logout",
-  "home",
+  "settings",
+  "sliders-horizontal",
+  "log-in",
+  "log-out",
+  "house",
   "link",
-  "discord",
-  "github",
-  "cloud-server",
+  "message-circle",
+  "globe",
+  "hard-drive",
   "download",
   "upload",
-  "reload",
-  "undo",
+  "refresh-cw",
+  "rotate-ccw",
   "save",
-  "trash",
+  "trash-2",
   "plus",
-  "close",
+  "x",
   "check",
   "clock",
   "hourglass",
-  "warning-diamond",
-  "circle-question",
+  "triangle-alert",
+  "octagon-alert",
+  "circle-help",
+  "info",
+  "lightbulb",
+  "flag",
+  "snowflake",
+  "wind",
   "arrow-up",
   "arrow-down",
   "arrow-left",
@@ -58,7 +65,7 @@ const names = [
 for (const name of names) {
   const svg = icon(name);
   check(`${name} renders one svg`, (svg.match(/<svg /g) ?? []).length === 1);
-  check(`${name} has at least one path`, svg.includes("<path "));
+  check(`${name} has a drawable shape`, /<(path|circle|rect|line|polyline|polygon|ellipse) /.test(svg));
 }
 
 check(
@@ -83,7 +90,15 @@ check(
 );
 check(
   "colour is inherited, not hard-coded",
-  !icon("git-branch").includes("fill="),
+  icon("git-branch").includes('stroke="currentColor"') && !/#[0-9a-f]{3,6}/i.test(icon("git-branch")),
+);
+check(
+  "stroke width is 2.25px at the default size",
+  icon("folder").includes('stroke-width="3.375"'),
+);
+check(
+  "stroke width stays 2.25px at other sizes",
+  icon("folder", 24).includes('stroke-width="2.25"') && icon("folder", 12).includes('stroke-width="4.5"'),
 );
 
 let threw = false;

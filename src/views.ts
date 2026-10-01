@@ -115,11 +115,11 @@ function layout(opts: {
     : "";
   const nav = opts.user
     ? `<a class="nav-link" href="/new">${icon("plus")}new</a>
-       <a class="nav-link" href="/settings">${icon("gear")}settings</a>
+       <a class="nav-link" href="/settings">${icon("settings")}settings</a>
        <form method="post" action="/auth/logout" class="nav-form">
-         <button type="submit" class="nav-link nav-button">${icon("sign-out")}logout</button>
+         <button type="submit" class="nav-link nav-button">${icon("log-out")}logout</button>
        </form>`
-    : `<a class="nav-link" href="/auth/login">${icon("sign-in")}login</a>`;
+    : `<a class="nav-link" href="/auth/login">${icon("log-in")}login</a>`;
 
   const description = metaText(opts.description || config.description);
   const url = esc(config.baseUrl + (opts.path ?? ""));
@@ -378,8 +378,8 @@ ${ownerTabs(opts.owner, "repos")}
 function repoNav(owner: string, name: string, active: string, q: string): string {
   const b = base(owner, name);
   return tabs(active, [
-    ["summary", "summary", "article", `${b}/${q}`],
-    ["log", "log", "git-commit", `${b}/log${q}`],
+    ["summary", "summary", "newspaper", `${b}/${q}`],
+    ["log", "log", "git-commit-horizontal", `${b}/log${q}`],
     ["tree", "tree", "folder", `${b}/tree${q}`],
   ]);
 }
@@ -430,14 +430,14 @@ ${renderMarkdown(opts.readme.text)}
   }
 
   const manage = isOwner
-    ? `    <h2 class="section-title">${icon("gear")}manage</h2>
+    ? `    <h2 class="section-title">${icon("settings")}manage</h2>
     <div class="tabs">
       <form method="post" action="${b}/visibility">
         <input type="hidden" name="public" value="${opts.isPublic ? "" : "on"}">
         <button type="submit">${icon(opts.isPublic ? "lock" : "lock-open")}make ${opts.isPublic ? "private" : "public"}</button>
       </form>
       <form method="post" action="${b}/delete" data-confirm="Delete ${esc(title)}? It moves to Recently Deleted.">
-        <button type="submit">${icon("trash")}delete repository</button>
+        <button type="submit">${icon("trash-2")}delete repository</button>
       </form>
     </div>
 ${collaboratorSection(b, opts.collaborators ?? [])}`
@@ -446,10 +446,10 @@ ${collaboratorSection(b, opts.collaborators ?? [])}`
   let descriptionForm = "";
   if (opts.canPush) {
     descriptionForm = `    <form method="post" action="${b}/description" class="box row">
-      <label class="label with-icon" for="repo-description">${icon("note")}description</label>
+      <label class="label with-icon" for="repo-description">${icon("sticky-note")}description</label>
       <input id="repo-description" class="grow" type="text" name="description" maxlength="300"
         value="${esc(opts.rawDescription)}" placeholder="what this repository is for">
-      <button type="submit">${icon("floppy-disk")}save</button>
+      <button type="submit">${icon("save")}save</button>
     </form>`;
   } else if (opts.rawDescription) {
     descriptionForm = `    <p class="muted">${esc(opts.rawDescription)}</p>`;
@@ -483,7 +483,7 @@ ${manage}`;
 }
 
 function kindIcon(kind: MirrorKind): string {
-  return icon(kind === "github" ? "github-logo" : "git-branch");
+  return icon(kind === "github" ? "globe" : "git-branch");
 }
 
 function mirrorSection(
@@ -520,7 +520,7 @@ function mirrorSection(
 
   if (canCheck && links.some((l) => !l.isPrivate)) {
     rows.push(`      <form method="post" action="${b}/mirrors/check">
-        <button type="submit">${icon("arrow-clockwise")}check now</button>
+        <button type="submit">${icon("refresh-cw")}check now</button>
       </form>`);
   }
 
@@ -548,11 +548,11 @@ ${MIRROR_KINDS.map(field).join("\n")}
       <p class="muted">Give the <code>user/repo</code> on ${esc(MIRROR_KINDS.map(mirrorHost).join(" or "))} &mdash; not a full URL.
       Mark a mirror <em>private</em> to skip status checks — they are anonymous, so a private
       mirror would otherwise always look unreachable. Clear a field to remove it.</p>
-      <button type="submit">${icon("floppy-disk")}save mirrors</button>
+      <button type="submit">${icon("save")}save mirrors</button>
     </form>`
     : "";
 
-  return `    <h2 class="section-title">${icon("hard-drives")}external mirrors</h2>
+  return `    <h2 class="section-title">${icon("hard-drive")}external mirrors</h2>
 ${list}
 ${form}`;
 }
@@ -561,15 +561,15 @@ const MIRROR_LABELS: Record<string, { label: string; glyph: string; cls: string 
   synced: { label: "Up to date", glyph: "check", cls: "good" },
   ahead: { label: "Mirror behind", glyph: "arrow-up", cls: "warn" },
   behind: { label: "Local behind", glyph: "arrow-down", cls: "warn" },
-  diverged: { label: "Diverged", glyph: "warning-diamond", cls: "bad" },
-  out_of_sync: { label: "Out of sync", glyph: "warning-diamond", cls: "bad" },
+  diverged: { label: "Diverged", glyph: "triangle-alert", cls: "bad" },
+  out_of_sync: { label: "Out of sync", glyph: "triangle-alert", cls: "bad" },
   denied: { label: "Private or missing", glyph: "lock", cls: "warn" },
   missing: { label: "Repository missing", glyph: "x", cls: "bad" },
 };
 
 const UNKNOWN_STATE = {
   label: "Unavailable",
-  glyph: "question",
+  glyph: "circle-help",
   cls: "bad",
 };
 
@@ -699,7 +699,7 @@ export function logPage(opts: {
   const rows = opts.commits.map(
     (cm) => `      <tr>
         <td class="mono">${fmtDate(cm.time)}</td>
-        <td>${icon("git-commit", 13)} <a href="${b}/commit/${esc(cm.hash)}${q}">${esc(cm.subject)}</a></td>
+        <td>${icon("git-commit-horizontal", 13)} <a href="${b}/commit/${esc(cm.hash)}${q}">${esc(cm.subject)}</a></td>
         <td class="muted">${esc(cm.author)}</td>
         <td class="mono">${esc(cm.hash.slice(0, 10))}</td>
       </tr>`,
@@ -829,7 +829,7 @@ export function commitPage(opts: {
   const body = `    <h1 class="page-title">${esc(cm.subject)}</h1>
 ${repoNav(opts.owner, opts.name, "log", q)}
     <dl class="commit-meta">
-      <dt class="with-icon">${icon("git-commit", 13)}commit</dt><dd class="mono">${esc(cm.hash)}</dd>
+      <dt class="with-icon">${icon("git-commit-horizontal", 13)}commit</dt><dd class="mono">${esc(cm.hash)}</dd>
       <dt class="with-icon">${icon("user", 13)}author</dt><dd>${esc(cm.author)} &lt;${esc(cm.email)}&gt;</dd>
       <dt class="with-icon">${icon("clock", 13)}date</dt><dd>${fmtDate(cm.time)}</dd>
     </dl>
@@ -856,7 +856,7 @@ function settingsLayout(opts: {
   const nav = tabs(opts.active, [
     ["account", "account", "user", "/settings"],
     ["tokens", "tokens", "key", "/settings/tokens"],
-    ["deleted", "recently deleted", "trash", "/settings/deleted"],
+    ["deleted", "recently deleted", "trash-2", "/settings/deleted"],
   ]);
   return layout({
     title: opts.title,
@@ -940,7 +940,7 @@ export function settingsPage(opts: {
   const clear = s.discordWebhook
     ? `      <form method="post" action="/settings/discord" data-confirm="Remove the Discord webhook? Events will stop being announced.">
         <input type="hidden" name="url" value="">
-        <button type="submit">${icon("trash")}remove webhook</button>
+        <button type="submit">${icon("trash-2")}remove webhook</button>
       </form>`
     : "";
 
@@ -951,7 +951,7 @@ export function settingsPage(opts: {
 
   const body = `${opts.saved ? `    <p class="good">saved.</p>` : ""}
 
-    <h2 class="section-title">${icon("discord-logo")}discord notifications</h2>
+    <h2 class="section-title">${icon("message-circle")}discord notifications</h2>
     <p class="muted">Announces repositories being created and deleted, and commits being
     pushed. Only repositories you own are announced, and only to this webhook.</p>
     <section class="box">
@@ -961,12 +961,12 @@ ${webhookError}
         <label class="label with-icon" for="discord-url">${icon("link")}webhook</label>
         <input id="discord-url" class="grow" type="url" name="url" autocomplete="off"
           placeholder="https://discord.com/api/webhooks/…">
-        <button type="submit">${icon("floppy-disk")}save</button>
+        <button type="submit">${icon("save")}save</button>
       </form>
 ${clear}
     </section>
 
-    <h2 class="section-title">${icon("sliders")}preferences</h2>
+    <h2 class="section-title">${icon("sliders-horizontal")}preferences</h2>
     <form method="post" action="/settings/prefs" class="box">
       <p><label><input type="checkbox" name="default_private"${on(s.defaultPrivate)}>
         New repositories start private</label></p>
@@ -978,7 +978,7 @@ ${clear}
         Check mirror status automatically when viewing a repository</label>
         <br><span class="muted">Off means mirrors are only checked when you press
         <em>check now</em>.</span></p>
-      <button type="submit">${icon("floppy-disk")}save preferences</button>
+      <button type="submit">${icon("save")}save preferences</button>
     </form>
 
     <h2 class="section-title">${icon("user")}account</h2>
@@ -1025,13 +1025,13 @@ export function deletedPage(opts: {
         <td>
           <form method="post" action="/settings/deleted/restore">
             <input type="hidden" name="entry" value="${esc(e.entry)}">
-            <button type="submit">${icon("arrow-counter-clockwise")}restore</button>
+            <button type="submit">${icon("rotate-ccw")}restore</button>
           </form>
         </td>
         <td>
           <form method="post" action="/settings/deleted/purge" data-confirm="Permanently delete ${esc(e.name)}? This destroys the git data and cannot be undone.">
             <input type="hidden" name="entry" value="${esc(e.entry)}">
-            <button type="submit">${icon("trash")}delete permanently</button>
+            <button type="submit">${icon("trash-2")}delete permanently</button>
           </form>
         </td>
       </tr>`;
@@ -1042,7 +1042,7 @@ export function deletedPage(opts: {
       ? `Deleted repositories are kept for ${opts.retentionDays} days, then purged the next time you open this page.`
       : `Deleted repositories are kept indefinitely — nothing is purged unless you do it here.`;
 
-  const body = `    <h2 class="section-title">${icon("trash")}recently deleted</h2>
+  const body = `    <h2 class="section-title">${icon("trash-2")}recently deleted</h2>
     <p class="muted">${esc(retention)} A deleted repository keeps its name reserved, so
     nothing new can take it until it is restored or purged.</p>
     ${table(["repository", "deleted", "by", "retention", "", ""], rows, "nothing deleted")}`;
