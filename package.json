@@ -11,7 +11,7 @@
     "test": "bun test/run.ts"
   },
   "dependencies": {
-    "hono": "^4.13.8",
+    "hono": "^4.13.13",
     "lucide-static": "^1.49.0",
     "openid-client": "^6.8.8"
   },
