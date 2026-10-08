@@ -12,7 +12,7 @@
   },
   "dependencies": {
     "hono": "^4.13.8",
-    "lucide-static": "^1.49.0",
+    "lucide-static": "^1.52.0",
     "openid-client": "^6.8.8"
   },
   "devDependencies": {
