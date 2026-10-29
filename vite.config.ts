@@ -23,7 +23,14 @@ export default defineConfig({
         directives: {
           "default-src": ["self"],
           "script-src": ["self"],
-          "style-src": ["self"],
+          // Two exact style attributes only: iconsax's color:currentColor on every icon,
+          // and SvelteKit's visually-hidden route announcer
+          "style-src": [
+            "self",
+            "unsafe-hashes",
+            "sha256-muhGX4Mn7np2XQi6DH6Iz+0SHdws6/BLgVigE46O3Xc=",
+            "sha256-S8qMpvofolR8Mpjy4kQvEm7m1q8clzU4dfDH0AmvZjo=",
+          ],
           "img-src": ["self", "data:", "https:"],
           "font-src": ["self", "https://raw.doughmination.gay"],
           "connect-src": ["self"],
