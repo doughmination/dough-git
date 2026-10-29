@@ -2,7 +2,7 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
-import { renderMarkdown, plainSummary } from "../src/markdown.ts";
+import { renderMarkdown, plainSummary } from "../src/lib/server/markdown.ts";
 
 let failures = 0;
 function check(label, cond) {
@@ -74,7 +74,7 @@ check(
 );
 check(
   "note alert includes an inline icon",
-  has("> [!NOTE]\n> Heads up.", 'class="icon"'),
+  has("> [!NOTE]\n> Heads up.", '<iconsax-icon name="info-circle"'),
 );
 check(
   "tip alert",

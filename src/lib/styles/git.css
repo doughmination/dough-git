@@ -1,0 +1,378 @@
+/* src/lib/styles/git.css
+ * LICENCED DASL-1.0 (c) Clove Twilight
+ */
+
+/* dough-git's own pieces: tables, code, the rendered README */
+
+.mono {
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}
+
+.with-icon {
+  display: inline-flex;
+  gap: 0.35em;
+  align-items: center;
+}
+
+.empty {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.good {
+  color: var(--ok);
+}
+
+.warn {
+  color: var(--warn);
+}
+
+.bad {
+  color: var(--bad);
+}
+
+.right {
+  text-align: right;
+}
+
+.section-title {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0.5rem 0 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.field-label {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* A one-line form: label, input, button */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+
+.row > input:not([type="checkbox"]) {
+  flex: 1 1 14rem;
+  width: auto;
+}
+
+.row > select {
+  width: auto;
+}
+
+/* Tables */
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--raised);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.92rem;
+}
+
+th,
+td {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: middle;
+}
+
+th {
+  color: var(--accent);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+tbody tr:hover td {
+  background: rgb(255 255 255 / 2%);
+}
+
+td iconsax-icon {
+  vertical-align: -0.2em;
+  color: var(--accent);
+}
+
+/* Code */
+
+pre.code {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgb(0 0 0 / 30%);
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.panel code,
+.readme code {
+  overflow-wrap: anywhere;
+}
+
+/* Rendered README */
+
+.readme {
+  padding: 1.25rem 1.5rem;
+  overflow-wrap: break-word;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--raised);
+}
+
+.readme > :first-child,
+.readme .md-alert > :first-child {
+  margin-top: 0;
+}
+
+.readme > :last-child,
+.readme .md-alert > :last-child {
+  margin-bottom: 0;
+}
+
+.readme :is(h1, h2, h3, h4, h5, h6) {
+  margin: 1.5rem 0 0.75rem;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.readme h1 {
+  font-size: 1.6rem;
+}
+
+.readme h2 {
+  font-size: 1.3rem;
+}
+
+.readme h3 {
+  font-size: 1.05rem;
+}
+
+.readme :is(h4, h5, h6) {
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.readme :is(h1, h2) {
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.readme :is(p, ul, ol, pre, blockquote, table) {
+  margin: 0.75rem 0;
+}
+
+.readme code {
+  padding: 0.12em 0.35em;
+  border-radius: 0.35rem;
+  background: rgb(255 255 255 / 6%);
+}
+
+.readme pre {
+  padding: 0.75rem 1rem;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: rgb(0 0 0 / 30%);
+}
+
+.readme pre code {
+  padding: 0;
+  background: none;
+  font-size: 0.85rem;
+}
+
+.readme blockquote {
+  padding: 0.1rem 0 0.1rem 1rem;
+  border-left: 3px solid var(--accent-line);
+  color: var(--muted);
+}
+
+.readme :is(ul, ol) {
+  padding-left: 1.5rem;
+}
+
+.readme li {
+  margin: 0.25rem 0;
+}
+
+.readme hr {
+  margin: 1.5rem 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.readme img {
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.readme table {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.readme th,
+.readme td {
+  border: 1px solid var(--line);
+}
+
+.readme [data-align="center"] {
+  text-align: center;
+}
+
+.readme [data-align="right"] {
+  text-align: right;
+}
+
+.readme del {
+  color: var(--muted);
+}
+
+/* README alerts: > [!NOTE] and friends */
+
+.readme .md-alert {
+  --alert: var(--line);
+  margin: 0.75rem 0;
+  padding: 0.6rem 1rem;
+  border-left: 3px solid var(--alert);
+  border-radius: 0.75rem;
+  background: var(--raised);
+}
+
+.readme .md-alert-title {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0 0 0.5rem;
+  color: var(--alert);
+  font-weight: 600;
+}
+
+.readme .md-alert-note {
+  --alert: #47b6ee;
+}
+
+.readme .md-alert-tip {
+  --alert: #96d94f;
+}
+
+.readme .md-alert-important {
+  --alert: var(--accent);
+}
+
+.readme .md-alert-warning {
+  --alert: var(--warn);
+}
+
+.readme .md-alert-caution {
+  --alert: var(--bad);
+}
+
+.readme .md-alert-frozen {
+  --alert: #b8dfe8;
+}
+
+.readme .md-alert-aside {
+  --alert: #74c2a8;
+  border-left-width: 2px;
+  color: var(--muted);
+}
+
+.readme .md-alert-aside .md-alert-title {
+  font-weight: 400;
+}
+
+/* README pride text: gradient-filled words */
+
+.readme .md-pride {
+  color: var(--text);
+  font-weight: 600;
+}
+
+@supports (background-clip: text) or (-webkit-background-clip: text) {
+  .readme .md-pride {
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .readme .md-pride {
+    background-image: none !important;
+    color: var(--text);
+    -webkit-text-fill-color: var(--text);
+  }
+}
+
+.readme .md-pride a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.readme .md-pride code {
+  color: var(--muted);
+  -webkit-text-fill-color: var(--muted);
+}
+.readme .md-pride-gay {
+  background-image: linear-gradient(96deg, #13a888, #26ceaa, #98e8c1, #7bade2, #918cdf);
+}
+
+.readme .md-pride-lesbian {
+  background-image: linear-gradient(96deg, #ec7151, #e8782e, #ee9d67, #f2f7fb, #d675af, #ee63b5);
+}
+
+.readme .md-pride-bisexual {
+  background-image: linear-gradient(96deg, #ee64ab, #bf80ba, #6894ee);
+}
+
+.readme .md-pride-transgender {
+  background-image: linear-gradient(96deg, #67c9ee, #f5a9b8, #f2f7fb, #f5a9b8, #67c9ee);
+}
+
+.readme .md-pride-pansexual {
+  background-image: linear-gradient(96deg, #ee65a7, #e6c619, #37aae9);
+}
+
+.readme .md-pride-asexual {
+  background-image: linear-gradient(96deg, #8fa4bc, #c3d3e2, #f2f7fb, #ec54ec);
+}
+
+.readme .md-pride-aromantic {
+  background-image: linear-gradient(96deg, #3fab44, #a7d379, #f2f7fb, #c3d3e2, #8fa4bc);
+}
+
+.readme .md-pride-nonbinary {
+  background-image: linear-gradient(96deg, #eae446, #f2f7fb, #b480dc, #8fa4bc);
+}
+
+.readme .md-pride-queer {
+  background-image: linear-gradient(96deg, #ef6d6d, #e68a19, #e6d719, #13ac41, #7994dd, #c578d5);
+}

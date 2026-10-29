@@ -1,0 +1,344 @@
+/* src/lib/styles/ui.css
+ * LICENCED DASL-1.0 (c) Clove Twilight
+ */
+
+/* App controls in the doughmination.gay look: raised surfaces, hairlines, accent rings */
+
+/* app.html's wrapper; a class, since the CSP allows no style attributes */
+.app {
+  display: contents;
+}
+
+/* Monospace */
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--mono);
+  font-size: 0.9em;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* Page width, same as the header and footer */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 62rem;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 3rem;
+}
+
+.page.narrow {
+  max-width: 34rem;
+}
+
+.page-head h1 {
+  margin: 0;
+  font-size: clamp(1.75rem, 5vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.page-head p {
+  margin: 0.25rem 0 0;
+}
+
+/* Panels: web's .card without the hover lift, for things you work in */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.25rem 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: var(--raised);
+}
+
+.panel h2 {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+/* Buttons */
+
+button,
+.btn {
+  display: inline-flex;
+  gap: 0.4em;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.9rem;
+  border: 1px solid var(--line);
+  /* Soft corners: a full pill curve clips text once a button wraps */
+  border-radius: 0.75rem;
+  background: var(--raised);
+  color: inherit;
+  font: inherit;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    color 0.15s ease,
+    filter 0.15s ease;
+}
+
+button:hover:not(:disabled),
+.btn:hover:not([aria-disabled="true"]) {
+  border-color: var(--accent-line);
+  color: var(--text);
+}
+
+button:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button.primary,
+.btn.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+button.primary:hover:not(:disabled),
+.btn.primary:hover {
+  color: var(--on-accent);
+  filter: brightness(1.12);
+}
+
+button.danger,
+.btn.danger {
+  color: var(--bad);
+}
+
+button.danger:hover:not(:disabled) {
+  border-color: var(--bad);
+}
+
+button.small,
+.btn.small {
+  padding: 0.25rem 0.7rem;
+  font-size: 0.82rem;
+}
+
+button iconsax-icon svg,
+.btn iconsax-icon svg {
+  width: 1.1em;
+  height: 1.1em;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+form.inline {
+  display: inline;
+}
+
+/* Fields */
+
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: rgb(0 0 0 / 25%);
+  color: var(--text);
+  font: inherit;
+}
+
+textarea {
+  min-height: 12rem;
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  tab-size: 2;
+  resize: vertical;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  width: auto;
+  accent-color: var(--accent);
+}
+
+input[readonly],
+input:disabled {
+  color: var(--muted);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline-offset: 0;
+  border-color: var(--accent-line);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field > span,
+.field > legend {
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+legend {
+  padding: 0;
+}
+
+.check {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.check input {
+  margin-top: 0.35rem;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+/* Notices and badges */
+
+.notice {
+  margin: 0;
+  padding: 0.65rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 0.75rem;
+  background: var(--raised);
+}
+
+.notice.ok {
+  border-color: rgb(127 217 139 / 40%);
+  background: rgb(127 217 139 / 8%);
+}
+
+.notice.error {
+  border-color: rgb(255 138 154 / 45%);
+  background: rgb(255 138 154 / 8%);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.05rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.badge.accent {
+  border-color: var(--accent-line);
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.badge.danger {
+  border-color: rgb(255 138 154 / 45%);
+  color: var(--bad);
+}
+
+/* Lists of rows */
+
+.rows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rows > li {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.7rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.rows > li:last-child {
+  border-bottom: 0;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 0.15rem 0 0;
+}
+
+.pager {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+/* Text helpers */
+
+.muted {
+  color: var(--muted);
+}
+
+.small {
+  font-size: 0.85rem;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  .btn {
+    transition: none;
+  }
+}

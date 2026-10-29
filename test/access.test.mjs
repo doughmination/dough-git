@@ -20,9 +20,9 @@ const {
   collaboratorLevel,
   dropRepoAccess,
   sharedWith,
-} = await import("../src/access.ts");
+} = await import("../src/lib/server/access.ts");
 
-const { safeRef, safeObjectId } = await import("../src/git.ts");
+const { safeRef, safeObjectId } = await import("../src/lib/server/git.ts");
 
 let failures = 0;
 function check(label, cond) {

@@ -10,9 +10,9 @@ const root = mkdtempSync(join(tmpdir(), "dough-own-"));
 process.env.MINIGIT_REPOS_ROOT = root;
 process.env.MINIGIT_DB_PATH = join(root, "test.db");
 
-const { rememberUser } = await import("../src/users.ts");
-const { createToken, revokeToken, listTokens } = await import("../src/tokens.ts");
-const { authenticateGit, gitActor } = await import("../src/auth.ts");
+const { rememberUser } = await import("../src/lib/server/users.ts");
+const { createToken, revokeToken, listTokens } = await import("../src/lib/server/tokens.ts");
+const { authenticateGit, gitActor } = await import("../src/lib/server/auth.ts");
 
 let failures = 0;
 function check(label, cond) {
