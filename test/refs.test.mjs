@@ -13,7 +13,7 @@ process.env.MINIGIT_REPOS_ROOT = root;
 process.env.MINIGIT_DB_PATH = join(root, "test.db");
 
 const { listRefs, resolveRev, refDir, setDescription, description, log } =
-  await import("../src/git.ts");
+  await import("../src/lib/server/git.ts");
 
 const exec = promisify(execFile);
 

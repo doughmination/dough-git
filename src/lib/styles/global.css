@@ -1,0 +1,121 @@
+/* src/lib/styles/global.css
+ * LICENCED DASL-1.0 (c) Clove Twilight
+ */
+
+* {
+  box-sizing: border-box;
+}
+
+/* <iconsax-icon> renders its <svg> inside itself, so size that via `... svg` selectors */
+iconsax-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+html {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  position: relative;
+  flex-direction: column;
+  min-height: 100%;
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+/* Keeps page sections laid out as before they were wrapped in <main> */
+main {
+  display: flex;
+  flex-direction: column;
+}
+
+a {
+  color: var(--text);
+  text-decoration-color: rgb(235 69 158 / 55%);
+  text-underline-offset: 0.2em;
+}
+
+a:hover {
+  color: #fff;
+  text-decoration-color: var(--accent);
+}
+
+h1 {
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+br {
+  display: block;
+  content: "";
+  margin-bottom: 1em;
+}
+
+/* Hero */
+
+/* The background image lives in the header"s .backdrop */
+.hero {
+  padding-block: 4rem 2rem;
+}
+
+.eyebrow {
+  margin: 0 0 0.5rem;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.hero h1 {
+  margin: 0 0 0.25rem;
+  font-size: clamp(2.75rem, 9vw, 4.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.subtitle {
+  margin: 0 0 1.25rem;
+  color: var(--muted);
+  font-size: clamp(1.05rem, 2.5vw, 1.25rem);
+}
+
+.lede {
+  max-width: 36rem;
+  margin: 0 0 2rem;
+  color: #cfc9d6;
+}
+
+.intro {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 2.5rem;
+  align-items: flex-start;
+}
+
+.intro .lede {
+  flex: 1 1 20rem;
+  margin: 0;
+}
+
+.wrap {
+  width: 100%;
+  max-width: 62rem;
+  margin: 0 auto;
+  padding-inline: 1.5rem;
+}
+
+@media print {
+  .hero {
+    display: none;
+  }
+  .lede {
+    display: none;
+  }
+  .wrap {
+    display: none;
+  }
+}

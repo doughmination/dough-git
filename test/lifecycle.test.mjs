@@ -36,11 +36,11 @@ const {
   purgeExpired,
   purgeAllExpired,
   DELETED_META,
-} = await import("../src/git.ts");
+} = await import("../src/lib/server/git.ts");
 const { setCollaborator, listCollaborators, collaboratorLevel } = await import(
-  "../src/access.ts"
+  "../src/lib/server/access.ts"
 );
-const { clearRepoMetadata } = await import("../src/repometa.ts");
+const { clearRepoMetadata } = await import("../src/lib/server/repometa.ts");
 
 let failures = 0;
 function check(label, cond) {

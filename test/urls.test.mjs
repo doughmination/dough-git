@@ -10,7 +10,7 @@ import {
   maskWebhook,
   isMirrorKind,
   MIRROR_KINDS,
-} from "../src/urls.ts";
+} from "../src/lib/server/urls.ts";
 
 let failures = 0;
 function check(label, cond) {

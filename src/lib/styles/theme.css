@@ -1,0 +1,27 @@
+/* src/lib/styles/theme.css
+ * LICENCED DASL-1.0 (c) Clove Twilight
+ */
+
+/* doughmination.gay's tokens, plus the few an app needs on top */
+:root {
+  --bg: #0b0a0d;
+  --raised: rgb(255 255 255 / 3.5%);
+  --line: rgb(255 255 255 / 9%);
+  --text: #ece9ef;
+  --muted: #a49eab;
+  --accent: #eb459e;
+  --accent-dim: rgb(235 69 158 / 14%);
+  --accent-line: rgb(235 69 158 / 40%);
+
+  --ok: #7fd98b;
+  --warn: #f2c46d;
+  --bad: #ff8a9a;
+  --on-accent: #1a0611;
+
+  --mono: "Comic Code", ui-monospace, "Cascadia Code", Menlo, monospace;
+
+  color-scheme: dark;
+  font-family: "IBM Plex Sans", system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
