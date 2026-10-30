@@ -68,7 +68,7 @@
   "vars": {
     "MINIGIT_BASE_URL": "https://backup.doughmination.gay",
     "MINIGIT_TITLE": "dough-git",
-    "MINIGIT_FAVICON": "https://m.doughmination.gay/img/avatars/git.png",
+    "MINIGIT_FAVICON": "https://backup.doughmination.gay/favicon.png",
     "MINIGIT_DESCRIPTION": "A minimal self-hosted git mirror.",
     "MINIGIT_THEME_COLOR": "#eb459e",
     "MINIGIT_PUBLIC_MARKER": "minigit-public",

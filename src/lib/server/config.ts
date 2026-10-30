@@ -19,7 +19,7 @@ export const config = {
 
   favicon: optional(
     "MINIGIT_FAVICON",
-    "https://m.doughmination.gay/img/avatars/git.png",
+    "/favicon.png",
   ),
 
   description: optional(

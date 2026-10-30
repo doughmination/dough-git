@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <linearGradient id="trans" x1="0" y1="3" x2="0" y2="21" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#5BCEFA"/>
+      <stop offset="25%" stop-color="#F5A9B8"/>
+      <stop offset="50%" stop-color="#FFFFFF"/>
+      <stop offset="75%" stop-color="#F5A9B8"/>
+      <stop offset="100%" stop-color="#5BCEFA"/>
+    </linearGradient>
+  </defs>
+  <rect width="24" height="24" rx="5" fill="#07050a"/>
+  <g fill="none" stroke="url(#trans)" stroke-width="2" stroke-linecap="round">
+    <path d="M8 7.5v9"/>
+    <path d="M16 9.5c0 4-8 3-8 6"/>
+  </g>
+  <g fill="url(#trans)">
+    <circle cx="8" cy="5.5" r="2.5"/>
+    <circle cx="8" cy="18.5" r="2.5"/>
+    <circle cx="16" cy="7.5" r="2.5"/>
+  </g>
+</svg>

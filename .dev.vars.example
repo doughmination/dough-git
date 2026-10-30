@@ -10,7 +10,7 @@ GIT_AGENT_URL=http://localhost:4011
 MINIGIT_BASE_URL=http://localhost:5173
 
 MINIGIT_TITLE=dough-git
-MINIGIT_FAVICON=https://m.doughmination.gay/img/avatars/git.png
+MINIGIT_FAVICON=http://localhost:5173/favicon.png
 MINIGIT_DESCRIPTION=A minimal self-hosted git mirror.
 MINIGIT_THEME_COLOR=#eb459e
 
