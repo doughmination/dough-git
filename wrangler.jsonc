@@ -3,6 +3,8 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "dough-git",
+  // Clove Twilight Team
+  "account_id": "f87ee4b9600f437b8da1104d077418c3",
   "main": "worker/index.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
@@ -24,7 +26,7 @@
     {
       "binding": "DB",
       "database_name": "dough-git",
-      "database_id": "REPLACE_WITH_ID_FROM_wrangler_d1_create",
+      "database_id": "6924b245-00d1-43b8-aafb-c359f920232a",
       "migrations_dir": "migrations"
     }
   ],
@@ -75,7 +77,7 @@
     "OIDC_ISSUER": "https://auth.doughmination.gay",
     "OIDC_CLIENT_ID": "dough-git",
     "OIDC_ADOPT_LEGACY_USERS": "true",
-    "R2_ENDPOINT": "https://REPLACE_WITH_ACCOUNT_ID.r2.cloudflarestorage.com",
+    "R2_ENDPOINT": "https://f87ee4b9600f437b8da1104d077418c3.r2.cloudflarestorage.com",
     "R2_BUCKET": "dough-git"
   },
 
