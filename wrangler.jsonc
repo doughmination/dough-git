@@ -8,6 +8,11 @@
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
 
+  // main wraps the SvelteKit build, so every deploy (local or Workers Builds) builds first
+  "build": {
+    "command": "bun run build"
+  },
+
   "assets": {
     "binding": "ASSETS",
     "directory": ".svelte-kit/cloudflare"

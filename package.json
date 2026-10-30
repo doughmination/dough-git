@@ -10,8 +10,8 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "typecheck": "bun run check",
     "test": "bun test/run.ts",
-    "preview": "bun run build && wrangler dev",
-    "deploy": "bun run build && wrangler d1 migrations apply dough-git --remote && wrangler deploy",
+    "preview": "wrangler dev",
+    "deploy": "wrangler d1 migrations apply dough-git --remote && wrangler deploy",
     "types": "wrangler types",
     "agent": "MINIGIT_REPOS_ROOT=./data/repos bun container/server.ts"
   },
