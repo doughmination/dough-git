@@ -27,7 +27,7 @@ const {
   mismatchReasons,
 } = await import("../src/lib/server/mirror.ts");
 const { classifyRemoteError, lsRemote, createRepo, refDir, localMirrorRefs } =
-  await import("../src/lib/server/git.ts");
+  await import("../container/git.ts");
 
 let failures = 0;
 function check(label, cond) {
@@ -277,15 +277,15 @@ const row = (over) => ({
   kind: "github", checkedAt: nowSec, okAt: nowSec, error: null,
   state: "synced", localSha: null, remoteSha: null, detail: null, ...over,
 });
-check("no rows to begin with", getStatuses(cref).size === 0);
+check("no rows to begin with", (await getStatuses(cref)).size === 0);
 check("a missing row needs a check", needsCheck(undefined) === true);
 check("a fresh row does not", needsCheck(row()) === false);
 check("a row never verified does", needsCheck(row({ okAt: null, error: "x", state: null })) === true);
 check("a row verified long ago does", needsCheck(row({ okAt: 1 })) === true);
 check("a row invalidated by a push does", needsCheck(row({ checkedAt: 0 })) === true);
-dropMirrorStatus(cref);
-markStale(cref);
-check("dropping and invalidating nothing is harmless", getStatuses(cref).size === 0);
+await dropMirrorStatus(cref);
+await markStale(cref);
+check("dropping and invalidating nothing is harmless", (await getStatuses(cref)).size === 0);
 
 rmSync(root, { recursive: true, force: true });
 rmSync(work, { recursive: true, force: true });

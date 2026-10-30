@@ -24,14 +24,14 @@ function basic(user, pass) {
   return `Basic ${Buffer.from(`${user}:${pass}`).toString("base64")}`;
 }
 
-const alex = rememberUser({
+const alex = await rememberUser({
   sub: "oidc-alex",
   username: "Alex.Kim",
   name: "Alex Kim",
   picture: null,
 });
 
-const sam = rememberUser({
+const sam = await rememberUser({
   sub: "oidc-sam",
   username: "sam",
   name: "Sam",
@@ -40,7 +40,7 @@ const sam = rememberUser({
 
 check("username is slugified into an owner segment", alex.slug === "alex.kim");
 
-const impostor = rememberUser({
+const impostor = await rememberUser({
   sub: "oidc-impostor",
   username: "alex.kim",
   name: "Not Alex",
@@ -49,26 +49,26 @@ const impostor = rememberUser({
 
 check("colliding usernames get distinct slugs", impostor.slug === "alex.kim-2");
 
-const alexToken = createToken("laptop", alex.slug, alex.sub);
-const samToken = createToken("laptop", sam.slug, sam.sub);
+const alexToken = await createToken("laptop", alex.slug, alex.sub);
+const samToken = await createToken("laptop", sam.slug, sam.sub);
 
 check(
   "no credentials is anonymous",
-  authenticateGit(undefined).kind === "anonymous",
+  (await authenticateGit(undefined)).kind === "anonymous",
 );
 
 check(
   "a garbage token is rejected",
-  authenticateGit(basic("alex.kim", "nope")).kind === "rejected",
+  (await authenticateGit(basic("alex.kim", "nope"))).kind === "rejected",
 );
 
-const asAlex = authenticateGit(basic("alex.kim", alexToken));
+const asAlex = await authenticateGit(basic("alex.kim", alexToken));
 check(
   "a token resolves to its owner",
   asAlex.kind === "user" && asAlex.owner === "alex.kim",
 );
 
-const asAlexRaw = authenticateGit(basic("Alex.Kim", alexToken));
+const asAlexRaw = await authenticateGit(basic("Alex.Kim", alexToken));
 check(
   "the un-slugified username is accepted too",
   asAlexRaw.kind === "user" && asAlexRaw.owner === "alex.kim",
@@ -76,17 +76,17 @@ check(
 
 check(
   "a token with the wrong username is rejected",
-  authenticateGit(basic("sam", alexToken)).kind === "rejected",
+  (await authenticateGit(basic("sam", alexToken))).kind === "rejected",
 );
 
 check(
   "a token with no username is rejected",
-  authenticateGit(basic("", alexToken)).kind === "rejected",
+  (await authenticateGit(basic("", alexToken))).kind === "rejected",
 );
 
 check(
   "there is no instance-wide credential any more",
-  authenticateGit(basic("anything", "static-instance-token")).kind === "rejected",
+  (await authenticateGit(basic("anything", "static-instance-token"))).kind === "rejected",
 );
 
 check("a user token acts as its owner", gitActor(asAlex) === "alex.kim");
@@ -98,23 +98,23 @@ check(
 
 check(
   "a user only sees their own tokens",
-  listTokens("alex.kim").length === 1 && listTokens("sam").length === 1,
+  (await listTokens("alex.kim")).length === 1 && (await listTokens("sam")).length === 1,
 );
 
 check(
   "revoking someone else's token is refused",
-  revokeToken(listTokens("sam")[0].id, "alex.kim") === false,
+  await revokeToken((await listTokens("sam"))[0].id, "alex.kim") === false,
 );
 
 check(
   "revoking your own token works",
-  revokeToken(listTokens("sam")[0].id, "sam") === true &&
-    listTokens("sam").length === 0,
+  await revokeToken((await listTokens("sam"))[0].id, "sam") === true &&
+    (await listTokens("sam")).length === 0,
 );
 
 check(
   "a revoked token stops authenticating",
-  authenticateGit(basic("sam", samToken)).kind === "rejected",
+  (await authenticateGit(basic("sam", samToken))).kind === "rejected",
 );
 
 rmSync(root, { recursive: true, force: true });

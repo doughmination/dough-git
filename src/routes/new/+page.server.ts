@@ -29,8 +29,8 @@ async function finishCreate(event: RequestEvent, result: CreateResult, verb: str
   }
 
   const owner = sessionSlug(me(event));
-  clearRepoMetadata(result.ref);
-  const startsPublic = !getSettings(owner).defaultPrivate;
+  await clearRepoMetadata(result.ref);
+  const startsPublic = !(await getSettings(owner)).defaultPrivate;
   if (startsPublic) await setRepoPublic(result.ref, true);
   notifyRepoCreated(result.ref, owner, startsPublic);
   redirect(303, `/${result.ref.owner}/${result.ref.name}`);

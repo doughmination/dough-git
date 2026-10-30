@@ -3,20 +3,7 @@
  */
 
 import { db, now } from "./db.ts";
-import type { RepoRef } from "./git.ts";
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS collaborators (
-    owner    TEXT NOT NULL,
-    repo     TEXT NOT NULL,
-    slug     TEXT NOT NULL,
-    level    TEXT NOT NULL,
-    added_at INTEGER NOT NULL,
-    PRIMARY KEY (owner, repo, slug)
-  );
-`);
-
-db.exec("CREATE INDEX IF NOT EXISTS collaborators_slug ON collaborators (slug)");
+import type { RepoRef } from "./gitref.ts";
 
 export type Level = "read" | "write";
 
@@ -32,51 +19,62 @@ export interface CollaboratorRow {
   added_at: number;
 }
 
-export function listCollaborators(ref: RepoRef): CollaboratorRow[] {
-  return db
+export async function listCollaborators(ref: RepoRef): Promise<CollaboratorRow[]> {
+  const { results } = await db()
     .prepare(
       `SELECT slug, level, added_at
        FROM collaborators
        WHERE owner = ? AND repo = ?
        ORDER BY slug`,
     )
-    .all(ref.owner, ref.name) as unknown as CollaboratorRow[];
+    .bind(ref.owner, ref.name)
+    .all<CollaboratorRow>();
+  return results;
 }
 
-export function setCollaborator(
+export async function setCollaborator(
   ref: RepoRef,
   slug: string,
   level: Level,
-): boolean {
+): Promise<boolean> {
   if (!slug || slug === ref.owner) return false;
-  db.prepare(
-    `INSERT INTO collaborators (owner, repo, slug, level, added_at)
-     VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT (owner, repo, slug) DO UPDATE SET level = excluded.level`,
-  ).run(ref.owner, ref.name, slug, level, now());
+  await db()
+    .prepare(
+      `INSERT INTO collaborators (owner, repo, slug, level, added_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT (owner, repo, slug) DO UPDATE SET level = excluded.level`,
+    )
+    .bind(
+      ref.owner,
+      ref.name,
+      slug,
+      level,
+      now(),
+    )
+    .run();
   return true;
 }
 
-export function removeCollaborator(ref: RepoRef, slug: string): boolean {
-  const result = db
+export async function removeCollaborator(ref: RepoRef, slug: string): Promise<boolean> {
+  const result = await db()
     .prepare("DELETE FROM collaborators WHERE owner = ? AND repo = ? AND slug = ?")
-    .run(ref.owner, ref.name, slug);
-  return Number(result.changes) > 0;
+    .bind(ref.owner, ref.name, slug)
+    .run();
+  return result.meta.changes > 0;
 }
 
-export function dropRepoAccess(ref: RepoRef): void {
-  db.prepare("DELETE FROM collaborators WHERE owner = ? AND repo = ?").run(
-    ref.owner,
-    ref.name,
-  );
+export async function dropRepoAccess(ref: RepoRef): Promise<void> {
+  await db()
+    .prepare("DELETE FROM collaborators WHERE owner = ? AND repo = ?")
+    .bind(ref.owner, ref.name)
+    .run();
 }
 
-export function collaboratorLevel(ref: RepoRef, slug: string): Level | null {
-  const row = db
-    .prepare(
-      "SELECT level FROM collaborators WHERE owner = ? AND repo = ? AND slug = ?",
-    )
-    .get(ref.owner, ref.name, slug) as { level: string } | undefined;
+export async function collaboratorLevel(ref: RepoRef, slug: string): Promise<Level | null> {
+  const row = await db()
+    .prepare("SELECT level FROM collaborators WHERE owner = ? AND repo = ? AND slug = ?")
+    .bind(ref.owner, ref.name, slug)
+    .first<{ level: string }>();
   if (!row || !isLevel(row.level)) return null;
   return row.level;
 }
@@ -87,14 +85,15 @@ export interface SharedRepo {
   level: Level;
 }
 
-export function sharedWith(slug: string): SharedRepo[] {
-  const rows = db
+export async function sharedWith(slug: string): Promise<SharedRepo[]> {
+  const { results: rows } = await db()
     .prepare(
       `SELECT owner, repo AS name, level
        FROM collaborators
        WHERE slug = ?`,
     )
-    .all(slug) as unknown as { owner: string; name: string; level: string }[];
+    .bind(slug)
+    .all<{ owner: string; name: string; level: string }>();
   return rows
     .filter((row) => isLevel(row.level))
     .map((row) => ({
@@ -110,12 +109,12 @@ export interface AccessQuery {
   viewer: string | null;
 }
 
-export function accessFor(query: AccessQuery): Access {
+export async function accessFor(query: AccessQuery): Promise<Access> {
   const { ref, isPublic, viewer } = query;
 
   if (viewer) {
     if (viewer === ref.owner) return "write";
-    const invited = collaboratorLevel(ref, viewer);
+    const invited = await collaboratorLevel(ref, viewer);
     if (invited === "write") return "write";
     if (invited === "read") return "read";
   }
@@ -123,10 +122,10 @@ export function accessFor(query: AccessQuery): Access {
   return isPublic ? "read" : "none";
 }
 
-export function canRead(query: AccessQuery): boolean {
-  return accessFor(query) !== "none";
+export async function canRead(query: AccessQuery): Promise<boolean> {
+  return (await accessFor(query)) !== "none";
 }
 
-export function canWrite(query: AccessQuery): boolean {
-  return accessFor(query) === "write";
+export async function canWrite(query: AccessQuery): Promise<boolean> {
+  return (await accessFor(query)) === "write";
 }

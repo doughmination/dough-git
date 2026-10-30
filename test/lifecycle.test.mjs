@@ -36,7 +36,7 @@ const {
   purgeExpired,
   purgeAllExpired,
   DELETED_META,
-} = await import("../src/lib/server/git.ts");
+} = await import("../container/git.ts");
 const { setCollaborator, listCollaborators, collaboratorLevel } = await import(
   "../src/lib/server/access.ts"
 );
@@ -66,17 +66,17 @@ async function seed(ref = REF) {
   rmSync(work, { recursive: true, force: true });
 }
 
-const trashIt = (ref, at = Math.floor(Date.now() / 1000)) =>
-  trashRepo(ref, { deletedAt: at, deletedBy: ref.owner, grants: listCollaborators(ref) });
+const trashIt = async (ref, at = Math.floor(Date.now() / 1000)) =>
+  trashRepo(ref, { deletedAt: at, deletedBy: ref.owner, grants: await listCollaborators(ref) });
 
 console.log("\n-- delete moves rather than destroys --");
 await seed();
-setCollaborator(REF, "bob", "write");
-setCollaborator(REF, "carol", "read");
+await setCollaborator(REF, "bob", "write");
+await setCollaborator(REF, "carol", "read");
 check("repo exists before deletion", await repoExists(REF));
 
 const moved = await trashIt(REF);
-clearRepoMetadata(REF);
+await clearRepoMetadata(REF);
 check("trashRepo reports success", moved.ok === true);
 check("live path is gone", !(await repoExists(REF)));
 check("live directory really removed", !existsSync(refDir(REF)));
@@ -105,8 +105,8 @@ check(
 );
 
 console.log("\n-- live grants were cleared --");
-check("bob has no live grant", collaboratorLevel(REF, "bob") === null);
-check("carol has no live grant", collaboratorLevel(REF, "carol") === null);
+check("bob has no live grant", await collaboratorLevel(REF, "bob") === null);
+check("carol has no live grant", await collaboratorLevel(REF, "carol") === null);
 
 console.log("\n-- the name stays reserved --");
 check("trashHasName sees it", await trashHasName("alice", "notes"));
@@ -155,14 +155,14 @@ check("purging twice is harmless", (await purgeFromTrash("alice", clash.entry)) 
 console.log("\n-- recreate after purge --");
 const after = { owner: "alice", name: "recycled" };
 await seed(after);
-setCollaborator(after, "bob", "write");
+await setCollaborator(after, "bob", "write");
 const rec = await trashIt(after);
-clearRepoMetadata(after);
+await clearRepoMetadata(after);
 await purgeFromTrash("alice", rec.entry);
-clearRepoMetadata(after);
+await clearRepoMetadata(after);
 const remade = await createRepo(after.owner, after.name);
 check("the name is free again", remade.ok === true);
-check("and inherits no stale grants", listCollaborators(after).length === 0);
+check("and inherits no stale grants", (await listCollaborators(after)).length === 0);
 
 console.log("\n-- retention --");
 const old = { owner: "alice", name: "ancient" };

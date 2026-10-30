@@ -5,25 +5,10 @@
 import { createHash, randomBytes } from "node:crypto";
 import { db, now } from "./db.ts";
 
-// Browser sessions live here rather than in a signed cookie so they can be
+// Browser sessions live in D1 rather than in a signed cookie so they can be
 // ended from the server side: on logout, and when the SSO stops vouching for
 // the account (disabled, removed from the app's allowed groups, signed out
 // everywhere).
-db.exec(`
-  CREATE TABLE IF NOT EXISTS sessions (
-    id_hash       TEXT PRIMARY KEY,
-    sub           TEXT NOT NULL,
-    email         TEXT,
-    refresh_token TEXT,
-    id_token      TEXT,
-    created_at    INTEGER NOT NULL,
-    verified_at   INTEGER NOT NULL,
-    checked_at    INTEGER NOT NULL,
-    expires_at    INTEGER NOT NULL
-  );
-`);
-
-db.exec("CREATE INDEX IF NOT EXISTS sessions_sub ON sessions (sub)");
 
 /** Hard cap on a session, however often it is refreshed. */
 export const SESSION_TTL = 60 * 60 * 24 * 30;
@@ -60,46 +45,50 @@ export interface NewSession {
 }
 
 /** Returns the cookie value. Only its hash is stored. */
-export function createSession(input: NewSession): string {
+export async function createSession(input: NewSession): Promise<string> {
   const token = randomBytes(32).toString("base64url");
   const ts = now();
-  db.prepare(
-    `INSERT INTO sessions (id_hash, sub, email, refresh_token, id_token, created_at, verified_at, checked_at, expires_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(
-    hashId(token),
-    input.sub,
-    input.email,
-    input.refreshToken,
-    input.idToken,
-    ts,
-    ts,
-    ts,
-    ts + (input.refreshToken ? SESSION_TTL : UNCHECKED_TTL),
-  );
+  await db()
+    .prepare(
+      `INSERT INTO sessions (id_hash, sub, email, refresh_token, id_token, created_at, verified_at, checked_at, expires_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      hashId(token),
+      input.sub,
+      input.email,
+      input.refreshToken,
+      input.idToken,
+      ts,
+      ts,
+      ts,
+      ts + (input.refreshToken ? SESSION_TTL : UNCHECKED_TTL),
+    )
+    .run();
   return token;
 }
 
-export function findSession(token: string | undefined): SessionRow | null {
+export async function findSession(token: string | undefined): Promise<SessionRow | null> {
   if (!token) return null;
-  const row = (db
+  const row = await db()
     .prepare("SELECT * FROM sessions WHERE id_hash = ?")
-    .get(hashId(token)) as unknown as SessionRow) ?? null;
+    .bind(hashId(token))
+    .first<SessionRow>();
   if (!row) return null;
   if (row.expires_at <= now()) {
-    deleteSessionRow(row.id_hash);
+    await deleteSessionRow(row.id_hash);
     return null;
   }
   return row;
 }
 
-export function deleteSessionRow(idHash: string): void {
-  db.prepare("DELETE FROM sessions WHERE id_hash = ?").run(idHash);
+export async function deleteSessionRow(idHash: string): Promise<void> {
+  await db().prepare("DELETE FROM sessions WHERE id_hash = ?").bind(idHash).run();
 }
 
-export function purgeExpiredSessions(): number {
-  const result = db.prepare("DELETE FROM sessions WHERE expires_at <= ?").run(now());
-  return Number(result.changes);
+export async function purgeExpiredSessions(): Promise<number> {
+  const result = await db().prepare("DELETE FROM sessions WHERE expires_at <= ?").bind(now()).run();
+  return result.meta.changes;
 }
 
 export type RefreshOutcome =
@@ -117,13 +106,11 @@ export type RefreshOutcome =
 
 export type Refresher = (refreshToken: string) => Promise<RefreshOutcome>;
 
-const inflight = new Map<string, Promise<SessionRow | null>>();
-
 /**
  * Makes sure the SSO still vouches for a session, asking at most every
  * RECHECK_AFTER seconds. Refresh tokens rotate on every use and replaying one
- * shuts the whole grant down, so concurrent requests on one session share a
- * single refresh instead of racing each other with the same token.
+ * shuts the whole grant down, so concurrent requests on one session let a
+ * single one refresh (claimed in D1) instead of racing with the same token.
  */
 export function revalidate(row: SessionRow, refresh: Refresher): Promise<SessionRow | null> {
   const ts = now();
@@ -134,15 +121,19 @@ export function revalidate(row: SessionRow, refresh: Refresher): Promise<Session
     return Promise.resolve(row);
   }
 
-  const pending = inflight.get(row.id_hash);
-  if (pending) return pending;
-
   if (ts - row.checked_at < RETRY_AFTER) {
     // A recent attempt failed to reach the SSO; don't hammer it on every request.
-    return Promise.resolve(ts - row.verified_at > RECHECK_AFTER + OUTAGE_GRACE ? end(row) : row);
+    return ts - row.verified_at > RECHECK_AFTER + OUTAGE_GRACE ? end(row) : Promise.resolve(row);
   }
 
-  const task = (async (): Promise<SessionRow | null> => {
+  return (async (): Promise<SessionRow | null> => {
+    // Whoever moves checked_at first spends the refresh token; the rest carry on with the row they have
+    const claim = await db()
+      .prepare("UPDATE sessions SET checked_at = ? WHERE id_hash = ? AND checked_at = ?")
+      .bind(ts, row.id_hash, row.checked_at)
+      .run();
+    if (claim.meta.changes === 0) return row;
+
     let outcome: RefreshOutcome;
     try {
       outcome = await refresh(row.refresh_token!);
@@ -157,7 +148,7 @@ export function revalidate(row: SessionRow, refresh: Refresher): Promise<Session
 
     if (outcome.kind === "unavailable") {
       if (at - row.verified_at > RECHECK_AFTER + OUTAGE_GRACE) return end(row);
-      db.prepare("UPDATE sessions SET checked_at = ? WHERE id_hash = ?").run(at, row.id_hash);
+      await db().prepare("UPDATE sessions SET checked_at = ? WHERE id_hash = ?").bind(at, row.id_hash).run();
       return { ...row, checked_at: at };
     }
 
@@ -169,18 +160,25 @@ export function revalidate(row: SessionRow, refresh: Refresher): Promise<Session
       verified_at: at,
       checked_at: at,
     };
-    db.prepare(
-      `UPDATE sessions SET email = ?, refresh_token = ?, id_token = ?, verified_at = ?, checked_at = ?
-       WHERE id_hash = ?`,
-    ).run(updated.email, updated.refresh_token, updated.id_token, at, at, row.id_hash);
+    await db()
+      .prepare(
+        `UPDATE sessions SET email = ?, refresh_token = ?, id_token = ?, verified_at = ?, checked_at = ?
+         WHERE id_hash = ?`,
+      )
+      .bind(
+        updated.email,
+        updated.refresh_token,
+        updated.id_token,
+        at,
+        at,
+        row.id_hash,
+      )
+      .run();
     return updated;
-  })().finally(() => inflight.delete(row.id_hash));
-
-  inflight.set(row.id_hash, task);
-  return task;
+  })();
 }
 
-function end(row: SessionRow): null {
-  deleteSessionRow(row.id_hash);
+async function end(row: SessionRow): Promise<null> {
+  await deleteSessionRow(row.id_hash);
   return null;
 }

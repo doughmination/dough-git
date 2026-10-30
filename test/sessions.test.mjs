@@ -33,11 +33,11 @@ const basic = (user, pass) => `Basic ${Buffer.from(`${user}:${pass}`).toString("
 
 console.log("\n-- moving accounts over from the old provider --");
 
-const legacy = rememberUser({ sub: "pocketid-clove", username: "clove", name: "Clove", picture: null });
-const legacyToken = createToken("laptop", legacy.slug, legacy.sub);
+const legacy = await rememberUser({ sub: "pocketid-clove", username: "clove", name: "Clove", picture: null });
+const legacyToken = await createToken("laptop", legacy.slug, legacy.sub);
 check("a pre-migration account has no issuer", legacy.issuer === null);
 
-const moved = rememberUser({
+const moved = await rememberUser({
   sub: "sso-clove",
   username: "clove",
   name: "Clove T",
@@ -46,48 +46,51 @@ const moved = rememberUser({
   adoptLegacy: true,
 });
 check("first SSO sign-in keeps the old namespace", moved.slug === "clove");
-check("and re-points it at the new subject", findUserBySlug("clove")?.sub === "sso-clove");
-check("and records the issuer", findUserBySlug("clove")?.issuer === SSO);
-check("and picks up the new profile", findUserBySlug("clove")?.name === "Clove T");
+check("and re-points it at the new subject", (await findUserBySlug("clove"))?.sub === "sso-clove");
+check("and records the issuer", (await findUserBySlug("clove"))?.issuer === SSO);
+check("and picks up the new profile", (await findUserBySlug("clove"))?.name === "Clove T");
 check(
   "tokens minted before the move still authenticate",
-  authenticateGit(basic("clove", legacyToken)).kind === "user",
+  (await authenticateGit(basic("clove", legacyToken))).kind === "user",
 );
-const createdBy = db.prepare("SELECT created_by FROM tokens WHERE owner = 'clove'").get();
+const createdBy = await db().prepare("SELECT created_by FROM tokens WHERE owner = 'clove'").first();
 check("token authorship follows the new subject", createdBy?.created_by === "sso-clove");
 
-const again = rememberUser({ sub: "sso-clove", username: "clove", name: "Clove T", picture: null, issuer: SSO, adoptLegacy: true });
+const again = await rememberUser({ sub: "sso-clove", username: "clove", name: "Clove T", picture: null, issuer: SSO, adoptLegacy: true });
 check("signing in again changes nothing", again.slug === "clove");
 
-const squatter = rememberUser({ sub: "sso-other", username: "clove", name: "Other", picture: null, issuer: SSO, adoptLegacy: true });
+const squatter = await rememberUser({ sub: "sso-other", username: "clove", name: "Other", picture: null, issuer: SSO, adoptLegacy: true });
 check("an adopted account can't be taken over a second time", squatter.slug === "clove-2");
 
-rememberUser({ sub: "pocketid-ari", username: "ari", name: "Ari", picture: null });
-const noAdopt = rememberUser({ sub: "sso-ari", username: "ari", name: "Ari", picture: null, issuer: SSO, adoptLegacy: false });
+await rememberUser({ sub: "pocketid-ari", username: "ari", name: "Ari", picture: null });
+const noAdopt = await rememberUser({ sub: "sso-ari", username: "ari", name: "Ari", picture: null, issuer: SSO, adoptLegacy: false });
 check("with adoption off, a new namespace is made", noAdopt.slug === "ari-2");
-check("and the old account is left alone", findUserBySlug("ari")?.sub === "pocketid-ari");
+check("and the old account is left alone", (await findUserBySlug("ari"))?.sub === "pocketid-ari");
 
 console.log("\n-- sessions --");
 
-check("an unknown cookie is no session", findSession("nope") === null);
-check("no cookie is no session", findSession(undefined) === null);
+check("an unknown cookie is no session", await findSession("nope") === null);
+check("no cookie is no session", await findSession(undefined) === null);
 
-function makeSession(refreshToken = "rt-1") {
-  const token = createSession({ sub: "sso-clove", email: "c@example.com", refreshToken, idToken: "id-1" });
-  return { token, row: findSession(token) };
+async function makeSession(refreshToken = "rt-1") {
+  const token = await createSession({ sub: "sso-clove", email: "c@example.com", refreshToken, idToken: "id-1" });
+  return { token, row: await findSession(token) };
 }
 
-function age(row, seconds) {
-  db.prepare("UPDATE sessions SET verified_at = ?, checked_at = ? WHERE id_hash = ?").run(
-    now() - seconds,
-    now() - seconds,
-    row.id_hash,
-  );
+async function age(row, seconds) {
+  await db()
+    .prepare("UPDATE sessions SET verified_at = ?, checked_at = ? WHERE id_hash = ?")
+    .bind(
+      now() - seconds,
+      now() - seconds,
+      row.id_hash,
+    )
+    .run();
   return { ...row, verified_at: now() - seconds, checked_at: now() - seconds };
 }
 
 {
-  const { token, row } = makeSession();
+  const { token, row } = await makeSession();
   check("a new session is found by its cookie", row?.sub === "sso-clove");
   check("the cookie value itself isn't stored", !JSON.stringify(row).includes(token));
 
@@ -100,8 +103,8 @@ function age(row, seconds) {
 }
 
 {
-  const { token, row } = makeSession();
-  const stale = age(row, RECHECK_AFTER + 5);
+  const { token, row } = await makeSession();
+  const stale = await age(row, RECHECK_AFTER + 5);
   let calls = 0;
   const refresher = async (rt) => {
     calls++;
@@ -111,7 +114,7 @@ function age(row, seconds) {
   const [a, b, c] = await Promise.all([revalidate(stale, refresher), revalidate(stale, refresher), revalidate(stale, refresher)]);
   check("concurrent requests share one refresh (rotation-safe)", calls === 1);
   check("all of them stay signed in", a && b && c);
-  const after = findSession(token);
+  const after = await findSession(token);
   check("the rotated refresh token is stored", after?.refresh_token === "rt-1-next");
   check("the new id_token is stored", after?.id_token === "id-2");
   check("email follows the SSO", after?.email === "new@example.com");
@@ -119,26 +122,26 @@ function age(row, seconds) {
 }
 
 {
-  const { token, row } = makeSession();
-  const result = await revalidate(age(row, RECHECK_AFTER + 5), async () => ({ kind: "revoked" }));
-  check("a revoked grant ends the session", result === null && findSession(token) === null);
+  const { token, row } = await makeSession();
+  const result = await revalidate(await age(row, RECHECK_AFTER + 5), async () => ({ kind: "revoked" }));
+  check("a revoked grant ends the session", result === null && await findSession(token) === null);
 }
 
 {
-  const { token, row } = makeSession();
-  const result = await revalidate(age(row, RECHECK_AFTER + 5), async () => ({
+  const { token, row } = await makeSession();
+  const result = await revalidate(await age(row, RECHECK_AFTER + 5), async () => ({
     kind: "ok", sub: "someone-else", email: null, refreshToken: "x", idToken: "y",
   }));
-  check("a refresh for a different subject ends the session", result === null && findSession(token) === null);
+  check("a refresh for a different subject ends the session", result === null && await findSession(token) === null);
 }
 
 {
-  const { token, row } = makeSession();
-  const result = await revalidate(age(row, RECHECK_AFTER + 5), async () => ({ kind: "unavailable" }));
-  check("an SSO outage within the grace period keeps the session", result !== null && findSession(token) !== null);
+  const { token, row } = await makeSession();
+  const result = await revalidate(await age(row, RECHECK_AFTER + 5), async () => ({ kind: "unavailable" }));
+  check("an SSO outage within the grace period keeps the session", result !== null && await findSession(token) !== null);
 
   let calls = 0;
-  await revalidate(findSession(token), async () => {
+  await revalidate(await findSession(token), async () => {
     calls++;
     return { kind: "unavailable" };
   });
@@ -146,26 +149,25 @@ function age(row, seconds) {
 }
 
 {
-  const { token, row } = makeSession();
-  const result = await revalidate(age(row, RECHECK_AFTER + OUTAGE_GRACE + 5), async () => ({ kind: "unavailable" }));
-  check("an outage past the grace period ends the session", result === null && findSession(token) === null);
+  const { token, row } = await makeSession();
+  const result = await revalidate(await age(row, RECHECK_AFTER + OUTAGE_GRACE + 5), async () => ({ kind: "unavailable" }));
+  check("an outage past the grace period ends the session", result === null && await findSession(token) === null);
 }
 
 {
-  const { token, row } = makeSession();
-  const result = await revalidate(age(row, RECHECK_AFTER + 5), async () => {
+  const { token, row } = await makeSession();
+  const result = await revalidate(await age(row, RECHECK_AFTER + 5), async () => {
     throw new Error("boom");
   });
-  check("a refresher that throws counts as an outage", result !== null && findSession(token) !== null);
+  check("a refresher that throws counts as an outage", result !== null && await findSession(token) !== null);
 }
 
 {
-  const { token, row } = makeSession();
-  db.prepare("UPDATE sessions SET expires_at = ? WHERE id_hash = ?").run(now() - 1, row.id_hash);
-  check("an expired session is gone", findSession(token) === null);
+  const { token, row } = await makeSession();
+  await db().prepare("UPDATE sessions SET expires_at = ? WHERE id_hash = ?").bind(now() - 1, row.id_hash).run();
+  check("an expired session is gone", await findSession(token) === null);
 }
 
-db.close();
 rmSync(root, { recursive: true, force: true });
 
 if (failures) {

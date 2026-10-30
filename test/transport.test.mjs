@@ -13,7 +13,7 @@ import {
   pktLine,
   advertiseResponse,
   serviceRpc,
-} from "../src/lib/server/smart-http.ts";
+} from "../container/smart-http.ts";
 
 const execFileAsync = promisify(execFile);
 

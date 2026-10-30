@@ -9,7 +9,7 @@ const failed: string[] = [];
 
 for (const file of files) {
   console.log(`\n=== ${file}`);
-  const run = Bun.spawnSync(["bun", file], {
+  const run = Bun.spawnSync(["bun", "--preload", "./test/preload.ts", file], {
     stdout: "inherit",
     stderr: "inherit",
   });

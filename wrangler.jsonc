@@ -1,0 +1,85 @@
+// wrangler.jsonc
+// LICENCED DASL-1.0 (c) Clove Twilight
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "dough-git",
+  "main": "worker/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".svelte-kit/cloudflare"
+  },
+
+  "routes": [
+    {
+      "pattern": "backup.doughmination.gay",
+      "custom_domain": true
+    }
+  ],
+
+  // Users, tokens, sessions, collaborators, settings, mirror status
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dough-git",
+      "database_id": "REPLACE_WITH_ID_FROM_wrangler_d1_create",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  // The git agent. One instance ("main") holds every repository
+  "containers": [
+    {
+      "class_name": "GitContainer",
+      "image": "./container/Dockerfile",
+      "image_build_context": ".",
+      "max_instances": 1,
+      "instance_type": "basic"
+    }
+  ],
+
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GIT",
+        "class_name": "GitContainer"
+      }
+    ]
+  },
+
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": ["GitContainer"]
+    }
+  ],
+
+  // Expired sessions and Recently Deleted past MINIGIT_TRASH_DAYS
+  "triggers": {
+    "crons": ["17 */6 * * *"]
+  },
+
+  // Secrets (wrangler secret put): OIDC_CLIENT_SECRET, SESSION_SECRET,
+  // R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY (an R2 API token for the dough-git bucket)
+  "vars": {
+    "MINIGIT_BASE_URL": "https://backup.doughmination.gay",
+    "MINIGIT_TITLE": "dough-git",
+    "MINIGIT_FAVICON": "https://m.doughmination.gay/img/avatars/git.png",
+    "MINIGIT_DESCRIPTION": "A minimal self-hosted git mirror.",
+    "MINIGIT_THEME_COLOR": "#eb459e",
+    "MINIGIT_PUBLIC_MARKER": "minigit-public",
+    "MINIGIT_AUTO_CREATE": "true",
+    "MINIGIT_TRASH_DAYS": "30",
+    "OIDC_ISSUER": "https://auth.doughmination.gay",
+    "OIDC_CLIENT_ID": "dough-git",
+    "OIDC_ADOPT_LEGACY_USERS": "true",
+    "R2_ENDPOINT": "https://REPLACE_WITH_ACCOUNT_ID.r2.cloudflarestorage.com",
+    "R2_BUCKET": "dough-git"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+}

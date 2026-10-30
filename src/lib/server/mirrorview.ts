@@ -6,7 +6,7 @@
 
 import { ago } from "../index.ts";
 import { mirrorSlug } from "./urls.ts";
-import type { MirrorLink } from "./git.ts";
+import type { MirrorLink } from "./gitref.ts";
 import type { MirrorStatus } from "./mirror.ts";
 
 const MIRROR_LABELS: Record<string, { label: string; glyph: string; cls: string }> = {

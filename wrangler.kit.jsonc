@@ -1,0 +1,25 @@
+// wrangler.kit.jsonc
+// LICENCED DASL-1.0 (c) Clove Twilight
+// What adapter-cloudflare builds into, and what `vite dev` binds. Deploys use
+// wrangler.jsonc, whose worker/index.ts wraps this build with the container and cron
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "dough-git",
+  "main": ".svelte-kit/cloudflare/_worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+
+  "assets": {
+    "binding": "ASSETS",
+    "directory": ".svelte-kit/cloudflare"
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "dough-git",
+      "database_id": "REPLACE_WITH_ID_FROM_wrangler_d1_create",
+      "migrations_dir": "migrations"
+    }
+  ]
+}

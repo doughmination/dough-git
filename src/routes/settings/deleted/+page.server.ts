@@ -22,7 +22,7 @@ export const load: PageServerLoad = async (event) => {
   const owner = sessionSlug(me(event));
 
   for (const gone of await purgeExpired(owner)) {
-    clearRepoMetadata({
+    await clearRepoMetadata({
       owner,
       name: gone.name,
     });
@@ -49,11 +49,11 @@ export const actions: Actions = {
     };
     for (const grant of result.meta.grants) {
       if (!isLevel(grant.level)) continue;
-      if (!findUserBySlug(grant.slug)) {
+      if (!(await findUserBySlug(grant.slug))) {
         console.warn(`[trash] restoring ${refSlug(ref)}: dropping grant for unknown user ${grant.slug}`);
         continue;
       }
-      setCollaborator(ref, grant.slug, grant.level);
+      await setCollaborator(ref, grant.slug, grant.level);
     }
 
     console.log(`[trash] restored ${refSlug(ref)}`);
@@ -68,7 +68,7 @@ export const actions: Actions = {
     const found = (await listTrash(owner)).find((e) => e.entry === entry);
     if (await purgeFromTrash(owner, entry)) {
       if (found) {
-        clearRepoMetadata({
+        await clearRepoMetadata({
           owner,
           name: found.name,
         });

@@ -24,7 +24,7 @@ const {
   notifyRepoDeleted,
   notifyPush,
 } = await import("../src/lib/server/notify.ts");
-const { createRepo, refDir, localMirrorRefs } = await import("../src/lib/server/git.ts");
+const { createRepo, refDir, localMirrorRefs } = await import("../container/git.ts");
 const { setDiscordWebhook, setPrefs, getSettings } = await import(
   "../src/lib/server/settings.ts"
 );
@@ -40,8 +40,12 @@ const WEBHOOK = `https://discord.com/api/webhooks/1234567890/${TOKEN}`;
 
 let sent = [];
 let fetchMode = "ok";
+// Only Discord is faked; the git agent still answers through the preload's fetch
+const passthrough = globalThis.fetch;
 globalThis.fetch = async (url, init) => {
-  sent.push({ url: String(url), body: JSON.parse(init.body) });
+  const href = url instanceof Request ? url.url : String(url);
+  if (!href.startsWith("https://discord.com/")) return passthrough(url, init);
+  sent.push({ url: href, body: JSON.parse(init.body) });
   if (fetchMode === "throw") throw new Error("connect ECONNREFUSED 10.0.0.1:443");
   if (fetchMode === "500") return { ok: false, status: 500 };
   return { ok: true, status: 204 };
@@ -160,7 +164,7 @@ notifyRepoCreated(ref, OWNER, true);
 await settle();
 check("no webhook configured -> nothing sent", sent.length === 0);
 
-setDiscordWebhook(OWNER, WEBHOOK);
+await setDiscordWebhook(OWNER, WEBHOOK);
 sent = [];
 notifyRepoCreated(ref, OWNER, true);
 await settle();
@@ -173,13 +177,13 @@ notifyRepoCreated(ref, OWNER, false);
 await settle();
 check("private repo is NOT announced by default", sent.length === 0);
 
-setPrefs(OWNER, { discordPrivate: true, defaultPrivate: true, mirrorAuto: true });
+await setPrefs(OWNER, { discordPrivate: true, defaultPrivate: true, mirrorAuto: true });
 sent = [];
 notifyRepoCreated(ref, OWNER, false);
 await settle();
 check("private repo IS announced once opted in", sent.length === 1);
 
-setPrefs(OWNER, { discordPrivate: false, defaultPrivate: true, mirrorAuto: true });
+await setPrefs(OWNER, { discordPrivate: false, defaultPrivate: true, mirrorAuto: true });
 sent = [];
 notifyRepoDeleted(ref, OWNER, true);
 await settle();
@@ -208,18 +212,18 @@ try {
   threw = true;
 }
 check("a delivery exception does not propagate", threw === false);
-check("the failure was recorded on the account", getSettings(OWNER).webhookError !== null);
-check("the recorded error is not the URL", !getSettings(OWNER).webhookError.includes(TOKEN));
+check("the failure was recorded on the account", (await getSettings(OWNER)).webhookError !== null);
+check("the recorded error is not the URL", !(await getSettings(OWNER)).webhookError.includes(TOKEN));
 
 fetchMode = "500";
 notifyRepoCreated(ref, OWNER, true);
 await settle();
-check("an HTTP error is recorded", getSettings(OWNER).webhookError === "HTTP 500");
+check("an HTTP error is recorded", (await getSettings(OWNER)).webhookError === "HTTP 500");
 
 fetchMode = "ok";
 notifyRepoCreated(ref, OWNER, true);
 await settle();
-check("a later success clears the error", getSettings(OWNER).webhookError === null);
+check("a later success clears the error", (await getSettings(OWNER)).webhookError === null);
 
 const allLogs = logged.join("\n");
 check("the webhook token never appears in any log", !allLogs.includes(TOKEN));
@@ -228,7 +232,7 @@ check("logs did mention a failure (so the check above is meaningful)", /failed/i
 
 console.log("\n-- a broken webhook does not stop repository work --");
 fetchMode = "throw";
-setDiscordWebhook(OWNER, WEBHOOK);
+await setDiscordWebhook(OWNER, WEBHOOK);
 const before = Date.now();
 notifyPush(ref, OWNER, true, afterSecond, afterForce);
 const elapsed = Date.now() - before;

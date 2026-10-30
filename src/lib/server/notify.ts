@@ -2,6 +2,7 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
+import { waitUntil } from "cloudflare:workers";
 import {
   refSlug,
   logRange,
@@ -144,12 +145,12 @@ export function pushEmbed(
 async function deliver(owner: string, isPublic: boolean, embed: Embed | null): Promise<void> {
   if (!embed) return;
 
-  const settings = getSettings(owner);
+  const settings = await getSettings(owner);
   if (!settings.discordWebhook) return;
 
   const target = discordWebhookUrl(settings.discordWebhook);
   if (!target) {
-    recordWebhookResult(owner, "stored webhook is not a valid Discord URL");
+    await recordWebhookResult(owner, "stored webhook is not a valid Discord URL");
     console.warn(`[notify] refusing to deliver for ${owner}: stored webhook failed validation`);
     return;
   }
@@ -164,13 +165,13 @@ async function deliver(owner: string, isPublic: boolean, embed: Embed | null): P
       redirect: "error",
     });
     if (!response.ok) {
-      recordWebhookResult(owner, `HTTP ${response.status}`);
+      await recordWebhookResult(owner, `HTTP ${response.status}`);
       console.warn(
         `[notify] discord delivery for ${owner} failed: HTTP ${response.status}`,
       );
       return;
     }
-    recordWebhookResult(owner, null);
+    await recordWebhookResult(owner, null);
   } catch (err) {
     const message =
       err instanceof Error
@@ -178,15 +179,18 @@ async function deliver(owner: string, isPublic: boolean, embed: Embed | null): P
           ? "timed out"
           : err.message.slice(0, 120)
         : "delivery failed";
-    recordWebhookResult(owner, message);
+    await recordWebhookResult(owner, message);
     console.warn(`[notify] discord delivery for ${owner} failed: ${message}`);
   }
 }
 
+// Outlives the response, so a slow Discord never holds a page or a push up
 function fireAndForget(owner: string, isPublic: boolean, embed: Embed | null): void {
-  void deliver(owner, isPublic, embed).catch((err) => {
-    console.warn(`[notify] unexpected delivery error for ${owner}:`, err);
-  });
+  waitUntil(
+    deliver(owner, isPublic, embed).catch((err) => {
+      console.warn(`[notify] unexpected delivery error for ${owner}:`, err);
+    }),
+  );
 }
 
 export function notifyRepoCreated(repo: RepoRef, actor: string, isPublic: boolean): void {
@@ -204,7 +208,7 @@ export function notifyPush(
   before: Map<string, string>,
   after: Map<string, string>,
 ): void {
-  void (async () => {
+  waitUntil((async () => {
     try {
       const changes = await diffRefs(repo, before, after);
       if (changes.length === 0) return;
@@ -212,5 +216,5 @@ export function notifyPush(
     } catch (err) {
       console.warn(`[notify] could not describe push to ${refSlug(repo)}:`, err);
     }
-  })();
+  })());
 }

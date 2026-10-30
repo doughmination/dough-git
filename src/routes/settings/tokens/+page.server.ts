@@ -9,12 +9,12 @@ import { sessionSlug } from "#lib/server/auth.ts";
 import { createToken, listTokens, revokeToken } from "#lib/server/tokens.ts";
 import { field, me } from "#lib/server/web.ts";
 
-export const load: PageServerLoad = (event) => {
+export const load: PageServerLoad = async (event) => {
   const slug = sessionSlug(me(event));
   return {
     slug,
     baseUrl: config.baseUrl,
-    tokens: listTokens(slug),
+    tokens: await listTokens(slug),
   };
 };
 
@@ -22,14 +22,14 @@ export const actions: Actions = {
   create: async (event) => {
     const user = me(event);
     const form = await event.request.formData();
-    const newToken = createToken(field(form, "label"), sessionSlug(user), user.sub);
+    const newToken = await createToken(field(form, "label"), sessionSlug(user), user.sub);
     // Shown once, straight back on this page; never stored in the clear
     return { newToken };
   },
 
   revoke: async (event) => {
     const form = await event.request.formData();
-    revokeToken(field(form, "id"), sessionSlug(me(event)));
+    await revokeToken(field(form, "id"), sessionSlug(me(event)));
     redirect(303, "/settings/tokens");
   },
 };

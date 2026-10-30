@@ -3,25 +3,8 @@
  */
 
 import { randomBytes, createHash } from "node:crypto";
-import { db, now, hasColumn } from "./db.ts";
+import { db, now } from "./db.ts";
 import { slugForSub } from "./users.ts";
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS tokens (
-    id         TEXT PRIMARY KEY,
-    label      TEXT NOT NULL,
-    hash       TEXT NOT NULL,
-    created_by TEXT,
-    created_at INTEGER NOT NULL,
-    last_used  INTEGER
-  );
-`);
-
-if (!hasColumn("tokens", "owner")) {
-  db.exec("ALTER TABLE tokens ADD COLUMN owner TEXT");
-}
-
-db.exec("CREATE INDEX IF NOT EXISTS tokens_hash ON tokens (hash)");
 
 function sha256(value: string): string {
   return createHash("sha256").update(value).digest("hex");
@@ -38,52 +21,64 @@ export interface TokenRow {
 
 const COLUMNS = "id, label, owner, created_by, created_at, last_used";
 
-export function listTokens(owner: string): TokenRow[] {
-  return db
+export async function listTokens(owner: string): Promise<TokenRow[]> {
+  const { results } = await db()
     .prepare(`SELECT ${COLUMNS} FROM tokens WHERE owner = ? ORDER BY created_at DESC`)
-    .all(owner) as unknown as TokenRow[];
+    .bind(owner)
+    .all<TokenRow>();
+  return results;
 }
 
-export function createToken(
+export async function createToken(
   label: string,
   owner: string,
   createdBy: string | null,
-): string {
+): Promise<string> {
   const id = randomBytes(6).toString("hex");
   const secret = randomBytes(24).toString("base64url");
   const plaintext = `dgt_${id}_${secret}`;
-  db.prepare(
-    `INSERT INTO tokens (id, label, hash, owner, created_by, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-  ).run(id, label.trim() || "token", sha256(plaintext), owner, createdBy, now());
+  await db()
+    .prepare(
+      `INSERT INTO tokens (id, label, hash, owner, created_by, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      id,
+      label.trim() || "token",
+      sha256(plaintext),
+      owner,
+      createdBy,
+      now(),
+    )
+    .run();
   return plaintext;
 }
 
-export function revokeToken(id: string, owner: string): boolean {
-  const row = db
+export async function revokeToken(id: string, owner: string): Promise<boolean> {
+  const row = await db()
     .prepare("SELECT owner FROM tokens WHERE id = ?")
-    .get(id) as { owner: string | null } | undefined;
+    .bind(id)
+    .first<{ owner: string | null }>();
   if (!row || row.owner !== owner) return false;
-  db.prepare("DELETE FROM tokens WHERE id = ?").run(id);
+  await db().prepare("DELETE FROM tokens WHERE id = ?").bind(id).run();
   return true;
 }
 
-export function verifyDbToken(plaintext: string): { owner: string | null } | null {
-  const row = db
+export async function verifyDbToken(plaintext: string): Promise<{ owner: string | null } | null> {
+  const row = await db()
     .prepare("SELECT id, owner, created_by FROM tokens WHERE hash = ?")
-    .get(sha256(plaintext)) as
-    | { id: string; owner: string | null; created_by: string | null }
-    | undefined;
+    .bind(sha256(plaintext))
+    .first<{ id: string; owner: string | null; created_by: string | null }>();
   if (!row) return null;
 
   let owner = row.owner;
   if (!owner) {
-    owner = slugForSub(row.created_by);
+    owner = await slugForSub(row.created_by);
     if (owner) {
-      db.prepare("UPDATE tokens SET owner = ? WHERE id = ?").run(owner, row.id);
+      await db().prepare("UPDATE tokens SET owner = ? WHERE id = ?").bind(owner, row.id).run();
     }
   }
 
-  db.prepare("UPDATE tokens SET last_used = ? WHERE id = ?").run(now(), row.id);
+  await db().prepare("UPDATE tokens SET last_used = ? WHERE id = ?").bind(now(), row.id).run();
   return { owner };
 }

@@ -5,9 +5,6 @@
 import type { Handle, HandleServerError, ServerInit } from "@sveltejs/kit/hooks";
 import { config, oidcEnabled } from "#lib/server/config.ts";
 import { SESSION_COOKIE, oidcIssuer, sessionUser } from "#lib/server/auth.ts";
-import { purgeExpiredSessions } from "#lib/server/sessions.ts";
-import { purgeAllExpired } from "#lib/server/git.ts";
-import { clearRepoMetadata } from "#lib/server/repometa.ts";
 
 const SITE_ORIGIN = new URL(config.baseUrl).origin;
 
@@ -17,35 +14,10 @@ const SSO_ORIGIN = config.oidc.issuer ? new URL(config.oidc.issuer).origin : "";
 
 const GIT_TRANSPORT = /\/(?:git-upload-pack|git-receive-pack|info\/refs)$/;
 
-const SWEEP_INTERVAL_MS = 6 * 60 * 60 * 1000;
-
-function sweepSessions(): void {
-  try {
-    const purged = purgeExpiredSessions();
-    if (purged) console.log(`[auth] purged ${purged} expired sessions`);
-  } catch (err) {
-    console.warn("[auth] session sweep failed:", err);
-  }
-}
-
-async function sweepTrash(): Promise<void> {
-  try {
-    for (const gone of await purgeAllExpired()) {
-      clearRepoMetadata({
-        owner: gone.owner,
-        name: gone.name,
-      });
-      console.log(`[trash] expired ${gone.owner}/${gone.name}`);
-    }
-  } catch (err) {
-    console.warn("[trash] scheduled sweep failed:", err);
-  }
-}
-
 export const init: ServerInit = async () => {
   console.log(`  oidc:       ${oidcEnabled ? "enabled" : "disabled"}`);
   console.log(
-    `  trash:      ${config.trashDays > 0 ? `${config.trashDays}d, swept every 6h` : "kept forever"}`,
+    `  trash:      ${config.trashDays > 0 ? `${config.trashDays}d, swept every 6h by cron` : "kept forever"}`,
   );
   if (oidcEnabled) {
     try {
@@ -55,13 +27,6 @@ export const init: ServerInit = async () => {
       console.error("  oidc discovery FAILED (check OIDC_ISSUER):", err instanceof Error ? err.message : err);
     }
   }
-
-  void sweepTrash();
-  sweepSessions();
-  setInterval(() => {
-    void sweepTrash();
-    sweepSessions();
-  }, SWEEP_INTERVAL_MS).unref();
 };
 
 function sameOrigin(request: Request): boolean {

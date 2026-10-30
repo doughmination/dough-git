@@ -32,66 +32,66 @@ function check(label, cond) {
 
 const repo = { owner: "alex", name: "notes" };
 
-function access(viewer, isPublic) {
-  return accessFor({ ref: repo, isPublic, viewer });
+async function access(viewer, isPublic) {
+  return await accessFor({ ref: repo, isPublic, viewer });
 }
 
-check("the owner has write on their own private repo", access("alex", false) === "write");
-check("a stranger sees nothing of a private repo", access("sam", false) === "none");
-check("an anonymous visitor sees nothing of a private repo", access(null, false) === "none");
+check("the owner has write on their own private repo", await access("alex", false) === "write");
+check("a stranger sees nothing of a private repo", await access("sam", false) === "none");
+check("an anonymous visitor sees nothing of a private repo", await access(null, false) === "none");
 
-check("anyone may read a public repo", access(null, true) === "read");
-check("a stranger may read but not write a public repo", access("sam", true) === "read");
-check("the owner still has write on a public repo", access("alex", true) === "write");
+check("anyone may read a public repo", await access(null, true) === "read");
+check("a stranger may read but not write a public repo", await access("sam", true) === "read");
+check("the owner still has write on a public repo", await access("alex", true) === "write");
 
-setCollaborator(repo, "sam", "read");
+await setCollaborator(repo, "sam", "read");
 
-check("a read collaborator can see a private repo", access("sam", false) === "read");
-check("a read collaborator still cannot push", !canWrite({ ref: repo, isPublic: false, viewer: "sam" }));
+check("a read collaborator can see a private repo", await access("sam", false) === "read");
+check("a read collaborator still cannot push", !await canWrite({ ref: repo, isPublic: false, viewer: "sam" }));
 check(
   "the grant is recorded at the level given",
-  collaboratorLevel(repo, "sam") === "read",
+  await collaboratorLevel(repo, "sam") === "read",
 );
 
-setCollaborator(repo, "jo", "write");
+await setCollaborator(repo, "jo", "write");
 
-check("a write collaborator can push", access("jo", false) === "write");
+check("a write collaborator can push", await access("jo", false) === "write");
 check(
   "a write collaborator on a public repo still has write",
-  access("jo", true) === "write",
+  await access("jo", true) === "write",
 );
 
-setCollaborator(repo, "sam", "write");
-check("re-adding a collaborator changes their level", collaboratorLevel(repo, "sam") === "write");
-check("re-adding does not duplicate the row", listCollaborators(repo).length === 2);
+await setCollaborator(repo, "sam", "write");
+check("re-adding a collaborator changes their level", await collaboratorLevel(repo, "sam") === "write");
+check("re-adding does not duplicate the row", (await listCollaborators(repo)).length === 2);
 
 const otherRepo = { owner: "alex", name: "secrets" };
 check(
   "a grant on one repo does not carry to another",
-  access("jo", false) === "write" &&
-    accessFor({ ref: otherRepo, isPublic: false, viewer: "jo" }) === "none",
+  await access("jo", false) === "write" &&
+    await accessFor({ ref: otherRepo, isPublic: false, viewer: "jo" }) === "none",
 );
 
-check("inviting the owner is refused", setCollaborator(repo, "alex", "read") === false);
+check("inviting the owner is refused", await setCollaborator(repo, "alex", "read") === false);
 check(
   "the owner keeps write regardless",
-  access("alex", false) === "write" && listCollaborators(repo).length === 2,
+  await access("alex", false) === "write" && (await listCollaborators(repo)).length === 2,
 );
 
-const jos = sharedWith("jo");
+const jos = await sharedWith("jo");
 check(
   "a collaborator can find the repos shared with them",
   jos.length === 1 && jos[0].owner === "alex" && jos[0].name === "notes",
 );
-check("somebody with no grants has nothing shared", sharedWith("nobody").length === 0);
+check("somebody with no grants has nothing shared", (await sharedWith("nobody")).length === 0);
 
-check("removing a collaborator reports success", removeCollaborator(repo, "sam") === true);
-check("a removed collaborator loses access", access("sam", false) === "none");
-check("removing a non-collaborator reports failure", removeCollaborator(repo, "sam") === false);
+check("removing a collaborator reports success", await removeCollaborator(repo, "sam") === true);
+check("a removed collaborator loses access", await access("sam", false) === "none");
+check("removing a non-collaborator reports failure", await removeCollaborator(repo, "sam") === false);
 
-dropRepoAccess(repo);
-check("deleting a repo drops its grants", listCollaborators(repo).length === 0);
-check("and the former collaborator has no access", access("jo", false) === "none");
+await dropRepoAccess(repo);
+check("deleting a repo drops its grants", (await listCollaborators(repo)).length === 0);
+check("and the former collaborator has no access", await access("jo", false) === "none");
 
 check("a normal repo path is accepted", safeRef("alex", "notes.git") !== null);
 check("a traversal in the owner is refused", safeRef("..", "notes") === null);

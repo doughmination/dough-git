@@ -25,7 +25,7 @@ const {
   listTrash,
   restoreFromTrash,
   repoExists,
-} = await import("../src/lib/server/git.ts");
+} = await import("../container/git.ts");
 
 const exec = promisify(execFile);
 

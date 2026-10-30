@@ -2,12 +2,9 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
-import adapter from "@sveltejs/adapter-node";
+import adapter from "@sveltejs/adapter-cloudflare";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { defineConfig } from "vite";
-
-// The build imports server modules to analyse them; keep it off the real database
-if (process.argv.includes("build")) process.env.MINIGIT_DB_PATH = ":memory:";
 
 export default defineConfig({
   plugins: [
@@ -16,8 +13,10 @@ export default defineConfig({
         // Runes everywhere except libraries
         runes: ({ filename }) => (filename.split(/[/\\]/).includes("node_modules") ? undefined : true),
       },
-      // serve.ts runs the built app on Bun.serve; this adapter only produces the build
-      adapter: adapter(),
+      // worker/index.ts wraps the Worker this produces, adding the container and cron
+      adapter: adapter({
+        config: "wrangler.kit.jsonc",
+      }),
       csp: {
         mode: "auto",
         directives: {

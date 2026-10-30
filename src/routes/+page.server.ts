@@ -9,11 +9,11 @@ import { viewerOf } from "#lib/server/web.ts";
 
 export const load: PageServerLoad = async (event) => {
   const viewer = viewerOf(event);
-  const shared = viewer ? new Set(sharedWith(viewer).map((r) => `${r.owner}/${r.name}`)) : null;
+  const shared = viewer ? new Set((await sharedWith(viewer)).map((r) => `${r.owner}/${r.name}`)) : null;
 
-  const repos = (await listRepos())
-    .filter((r) => !isProfileRepo(r.name))
-    .filter((r) =>
+  const listed = (await listRepos()).filter((r) => !isProfileRepo(r.name));
+  const allowed = await Promise.all(
+    listed.map((r) =>
       canRead({
         ref: {
           owner: r.owner,
@@ -22,7 +22,11 @@ export const load: PageServerLoad = async (event) => {
         isPublic: r.isPublic,
         viewer,
       }),
-    )
+    ),
+  );
+
+  const repos = listed
+    .filter((_, i) => allowed[i])
     .map((r) => ({
       ...r,
       shared: shared?.has(`${r.owner}/${r.name}`) ?? false,

@@ -2,17 +2,19 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
+import { building } from "$app/env";
+import { env } from "cloudflare:workers";
+
+// Vars and secrets from wrangler.jsonc, or .dev.vars locally. The build has no
+// bindings, and touching them there throws
+const vars: Record<string, string | undefined> = building ? {} : (env as unknown as Record<string, string>);
+
 function optional(name: string, fallback: string): string {
-  return process.env[name] ?? fallback;
+  return vars[name] ?? fallback;
 }
 
-const reposRoot = optional("MINIGIT_REPOS_ROOT", "/srv/git");
-
 export const config = {
-  reposRoot,
-  baseUrl: optional("MINIGIT_BASE_URL", "http://localhost:4010"),
-  host: optional("MINIGIT_HOST", "127.0.0.1"),
-  port: Number(optional("MINIGIT_PORT", "4010")),
+  baseUrl: optional("MINIGIT_BASE_URL", "http://localhost:5173"),
   title: optional("MINIGIT_TITLE", "dough-git"),
 
   favicon: optional(
@@ -26,10 +28,6 @@ export const config = {
   ),
 
   themeColor: optional("MINIGIT_THEME_COLOR", "#eb459e"),
-
-  publicMarker: optional("MINIGIT_PUBLIC_MARKER", "minigit-public"),
-
-  dbPath: optional("MINIGIT_DB_PATH", "") || `${reposRoot}/dough-git.db`,
 
   autoCreate: optional("MINIGIT_AUTO_CREATE", "true") !== "false",
 

@@ -3,9 +3,8 @@
  */
 
 import type { RequestHandler } from "./$types";
-import { refDir, safeRef } from "#lib/server/git.ts";
-import { advertiseResponse, type GitService } from "#lib/server/smart-http.ts";
-import { GIT_SERVICES, gitGate } from "#lib/server/transport.ts";
+import { safeRef } from "#lib/server/git.ts";
+import { GIT_SERVICES, advertise, type GitService } from "#lib/server/transport.ts";
 
 export const GET: RequestHandler = async ({ params, url, request }) => {
   const ref = safeRef(params.owner, params.name);
@@ -14,7 +13,5 @@ export const GET: RequestHandler = async ({ params, url, request }) => {
     return new Response("only smart HTTP is supported\n", { status: 400 });
   }
 
-  const gate = await gitGate(request, ref, service === "git-receive-pack");
-  if (gate.response) return gate.response;
-  return advertiseResponse(refDir(ref), service);
+  return advertise(request, ref, service);
 };

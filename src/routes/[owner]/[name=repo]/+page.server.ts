@@ -2,6 +2,7 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
+import { waitUntil } from "cloudflare:workers";
 import { redirect } from "@sveltejs/kit";
 import type { Actions, PageServerLoad } from "./$types";
 import { config } from "#lib/server/config.ts";
@@ -71,18 +72,20 @@ export const load: PageServerLoad = async (event) => {
   const isOwner = viewer === ref.owner;
   const canPush = access === "write";
 
-  const statuses = getStatuses(ref);
+  const statuses = await getStatuses(ref);
   let localSha: string | null = null;
   if (links.length > 0) {
     const localRefs = await localMirrorRefs(ref);
     localSha = localRefs.get(`refs/heads/${refs.head}`) ?? null;
 
-    if (canPush && getSettings(ref.owner).mirrorAuto) {
+    if (canPush && (await getSettings(ref.owner)).mirrorAuto) {
       const due = links.filter((l) => !l.isPrivate && needsCheck(statuses.get(l.kind)));
       if (due.length > 0) {
-        void checkAllMirrors(ref, due).catch((err) => {
-          console.warn(`[mirror] background check failed for ${refSlug(ref)}:`, err);
-        });
+        waitUntil(
+          checkAllMirrors(ref, due).catch((err) => {
+            console.warn(`[mirror] background check failed for ${refSlug(ref)}:`, err);
+          }),
+        );
       }
     }
   }
@@ -111,7 +114,7 @@ export const load: PageServerLoad = async (event) => {
       : null,
     canPush,
     isOwner,
-    collaborators: isOwner ? listCollaborators(ref) : null,
+    collaborators: isOwner ? await listCollaborators(ref) : null,
     mirrors: links.map((link) => describeMirror(link, statuses.get(link.kind) ?? null, nowSec)),
     canCheckMirrors: canPush && links.some((l) => !l.isPrivate),
     mirrorFields: MIRROR_KINDS.map((kind) => {
@@ -154,14 +157,14 @@ export const actions: Actions = {
     const result = await trashRepo(ref, {
       deletedAt: Math.floor(Date.now() / 1000),
       deletedBy: slug,
-      grants: listCollaborators(ref).map((g) => ({
+      grants: (await listCollaborators(ref)).map((g) => ({
         slug: g.slug,
         level: g.level,
       })),
     });
     if (!result.ok) fail("could not delete", result.error ?? "unknown error");
 
-    clearRepoMetadata(ref);
+    await clearRepoMetadata(ref);
     notifyRepoDeleted(ref, slug, wasPublic);
     redirect(303, "/settings/deleted");
   },
@@ -173,7 +176,7 @@ export const actions: Actions = {
     const levelRaw = field(form, "level") || "read";
     const level = isLevel(levelRaw) ? levelRaw : "read";
 
-    const invited = findUserBySlug(slug);
+    const invited = await findUserBySlug(slug);
     if (!invited) {
       fail(
         "no such user",
@@ -185,14 +188,14 @@ export const actions: Actions = {
       fail("already the owner", "You can't add yourself as a collaborator on your own repo.");
     }
 
-    setCollaborator(ref, invited.slug, level);
+    await setCollaborator(ref, invited.slug, level);
     back(ref);
   },
 
   uncollaborate: async (event) => {
     const ref = await ownedRef(event);
     const form = await event.request.formData();
-    removeCollaborator(ref, field(form, "slug"));
+    await removeCollaborator(ref, field(form, "slug"));
     back(ref);
   },
 
@@ -230,7 +233,7 @@ export const actions: Actions = {
     await setLinks(ref, links);
     for (const old of before) {
       const still = links.find((l) => l.kind === old.kind && l.url === old.url);
-      if (!still) dropMirrorStatusKind(ref, old.kind);
+      if (!still) await dropMirrorStatusKind(ref, old.kind);
     }
     back(ref);
   },

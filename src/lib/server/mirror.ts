@@ -16,22 +16,6 @@ import {
 } from "./git.ts";
 import type { MirrorKind } from "./urls.ts";
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS mirror_status (
-    owner      TEXT NOT NULL,
-    repo       TEXT NOT NULL,
-    kind       TEXT NOT NULL,
-    checked_at INTEGER NOT NULL,
-    error      TEXT,
-    ok_at      INTEGER,
-    state      TEXT,
-    local_sha  TEXT,
-    remote_sha TEXT,
-    detail     TEXT,
-    PRIMARY KEY (owner, repo, kind)
-  );
-`);
-
 export type MirrorState =
   | "synced"
   | "ahead"
@@ -76,17 +60,18 @@ function toStatus(row: Row): MirrorStatus {
   };
 }
 
-export function getStatuses(ref: RepoRef): Map<string, MirrorStatus> {
-  const rows = db
+export async function getStatuses(ref: RepoRef): Promise<Map<string, MirrorStatus>> {
+  const { results: rows } = await db()
     .prepare(
       `SELECT kind, checked_at, error, ok_at, state, local_sha, remote_sha, detail
        FROM mirror_status WHERE owner = ? AND repo = ?`,
     )
-    .all(ref.owner, ref.name) as unknown as Row[];
+    .bind(ref.owner, ref.name)
+    .all<Row>();
   return new Map(rows.map((r) => [r.kind, toStatus(r)]));
 }
 
-function recordSuccess(
+async function recordSuccess(
   ref: RepoRef,
   kind: MirrorKind,
   result: {
@@ -95,9 +80,9 @@ function recordSuccess(
     remoteSha: string | null;
     detail: string;
   },
-): void {
+): Promise<void> {
   const ts = now();
-  db.prepare(
+  await db().prepare(
     `INSERT INTO mirror_status
        (owner, repo, kind, checked_at, error, ok_at, state, local_sha, remote_sha, detail)
      VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)
@@ -109,40 +94,55 @@ function recordSuccess(
        local_sha  = excluded.local_sha,
        remote_sha = excluded.remote_sha,
        detail     = excluded.detail`,
-  ).run(
-    ref.owner, ref.name, kind, ts, ts,
-    result.state, result.localSha, result.remoteSha, result.detail,
-  );
+  ).bind(
+    ref.owner,
+    ref.name,
+    kind,
+    ts,
+    ts,
+    result.state,
+    result.localSha,
+    result.remoteSha,
+    result.detail,
+  ).run();
 }
 
-function recordFailure(ref: RepoRef, kind: MirrorKind, error: string): void {
+async function recordFailure(ref: RepoRef, kind: MirrorKind, error: string): Promise<void> {
   const message = error.slice(0, 200);
-  db.prepare(
+  await db().prepare(
     `INSERT INTO mirror_status (owner, repo, kind, checked_at, error)
      VALUES (?, ?, ?, ?, ?)
      ON CONFLICT (owner, repo, kind) DO UPDATE SET
        checked_at = excluded.checked_at,
        error      = excluded.error`,
-  ).run(ref.owner, ref.name, kind, now(), message);
-}
-
-export function dropMirrorStatus(ref: RepoRef): void {
-  db.prepare("DELETE FROM mirror_status WHERE owner = ? AND repo = ?").run(
+  ).bind(
     ref.owner,
     ref.name,
-  );
+    kind,
+    now(),
+    message,
+  ).run();
 }
 
-export function dropMirrorStatusKind(ref: RepoRef, kind: string): void {
-  db.prepare(
-    "DELETE FROM mirror_status WHERE owner = ? AND repo = ? AND kind = ?",
-  ).run(ref.owner, ref.name, kind);
+export async function dropMirrorStatus(ref: RepoRef): Promise<void> {
+  await db()
+    .prepare("DELETE FROM mirror_status WHERE owner = ? AND repo = ?")
+    .bind(ref.owner, ref.name)
+    .run();
 }
 
-export function markStale(ref: RepoRef): void {
-  db.prepare(
-    "UPDATE mirror_status SET checked_at = 0 WHERE owner = ? AND repo = ?",
-  ).run(ref.owner, ref.name);
+export async function dropMirrorStatusKind(ref: RepoRef, kind: string): Promise<void> {
+  await db()
+    .prepare("DELETE FROM mirror_status WHERE owner = ? AND repo = ? AND kind = ?")
+    .bind(ref.owner, ref.name, kind)
+    .run();
+}
+
+export async function markStale(ref: RepoRef): Promise<void> {
+  await db()
+    .prepare("UPDATE mirror_status SET checked_at = 0 WHERE owner = ? AND repo = ?")
+    .bind(ref.owner, ref.name)
+    .run();
 }
 
 export function parseLsRemote(text: string): Map<string, string> {
@@ -247,7 +247,7 @@ export async function checkMirror(
   const k = key(ref, link.kind);
   if (inFlight.has(k)) return false;
 
-  const existing = getStatuses(ref).get(link.kind);
+  const existing = (await getStatuses(ref)).get(link.kind);
   if (
     existing &&
     existing.checkedAt > 0 &&
@@ -262,7 +262,7 @@ export async function checkMirror(
     if (!remoteResult.ok) {
       logIssue(ref, link, remoteResult.kind, remoteResult.message);
       if (remoteResult.kind === "denied" || remoteResult.kind === "missing") {
-        recordSuccess(ref, link.kind, {
+        await recordSuccess(ref, link.kind, {
           state: remoteResult.kind,
           localSha: null,
           remoteSha: null,
@@ -272,7 +272,7 @@ export async function checkMirror(
               : "no such repository",
         });
       } else {
-        recordFailure(ref, link.kind, remoteResult.message);
+        await recordFailure(ref, link.kind, remoteResult.message);
       }
       return true;
     }
@@ -291,7 +291,7 @@ export async function checkMirror(
       logIssue(ref, link, state, reason);
     }
 
-    recordSuccess(ref, link.kind, {
+    await recordSuccess(ref, link.kind, {
       state,
       localSha: localHead,
       remoteSha: remoteHead,
@@ -301,7 +301,7 @@ export async function checkMirror(
   } catch (err) {
     const message = err instanceof Error ? err.message : "check failed";
     logIssue(ref, link, "error", message);
-    recordFailure(ref, link.kind, message);
+    await recordFailure(ref, link.kind, message);
     return true;
   } finally {
     inFlight.delete(k);

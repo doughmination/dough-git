@@ -4,19 +4,6 @@
 
 import { db, now } from "./db.ts";
 
-db.exec(`
-  CREATE TABLE IF NOT EXISTS user_settings (
-    owner            TEXT PRIMARY KEY,
-    discord_webhook  TEXT,
-    discord_private  INTEGER NOT NULL DEFAULT 0,
-    default_private  INTEGER NOT NULL DEFAULT 1,
-    mirror_auto      INTEGER NOT NULL DEFAULT 1,
-    webhook_error    TEXT,
-    webhook_error_at INTEGER,
-    updated_at       INTEGER NOT NULL
-  );
-`);
-
 export interface Settings {
   owner: string;
   discordWebhook: string | null;
@@ -46,10 +33,11 @@ interface Row {
   webhook_error_at: number | null;
 }
 
-export function getSettings(owner: string): Settings {
-  const row = db
+export async function getSettings(owner: string): Promise<Settings> {
+  const row = await db()
     .prepare("SELECT * FROM user_settings WHERE owner = ?")
-    .get(owner) as unknown as Row | undefined;
+    .bind(owner)
+    .first<Row>();
   if (!row) return { owner, ...DEFAULTS };
   return {
     owner,
@@ -62,21 +50,27 @@ export function getSettings(owner: string): Settings {
   };
 }
 
-function ensureRow(owner: string): void {
-  db.prepare(
-    `INSERT INTO user_settings (owner, updated_at) VALUES (?, ?)
-     ON CONFLICT (owner) DO NOTHING`,
-  ).run(owner, now());
+function ensureRow(owner: string): D1PreparedStatement {
+  return db()
+    .prepare(
+      `INSERT INTO user_settings (owner, updated_at) VALUES (?, ?)
+       ON CONFLICT (owner) DO NOTHING`,
+    )
+    .bind(owner, now());
 }
 
-export function setDiscordWebhook(owner: string, url: string | null): void {
-  ensureRow(owner);
-  db.prepare(
-    `UPDATE user_settings
-     SET discord_webhook = ?, webhook_error = NULL, webhook_error_at = NULL,
-         updated_at = ?
-     WHERE owner = ?`,
-  ).run(url, now(), owner);
+export async function setDiscordWebhook(owner: string, url: string | null): Promise<void> {
+  await db().batch([
+    ensureRow(owner),
+    db()
+      .prepare(
+        `UPDATE user_settings
+         SET discord_webhook = ?, webhook_error = NULL, webhook_error_at = NULL,
+             updated_at = ?
+         WHERE owner = ?`,
+      )
+      .bind(url, now(), owner),
+  ]);
 }
 
 export interface Prefs {
@@ -85,24 +79,34 @@ export interface Prefs {
   mirrorAuto: boolean;
 }
 
-export function setPrefs(owner: string, prefs: Prefs): void {
-  ensureRow(owner);
-  db.prepare(
-    `UPDATE user_settings
-     SET discord_private = ?, default_private = ?, mirror_auto = ?, updated_at = ?
-     WHERE owner = ?`,
-  ).run(
-    prefs.discordPrivate ? 1 : 0,
-    prefs.defaultPrivate ? 1 : 0,
-    prefs.mirrorAuto ? 1 : 0,
-    now(),
-    owner,
-  );
+export async function setPrefs(owner: string, prefs: Prefs): Promise<void> {
+  await db().batch([
+    ensureRow(owner),
+    db()
+      .prepare(
+        `UPDATE user_settings
+         SET discord_private = ?, default_private = ?, mirror_auto = ?, updated_at = ?
+         WHERE owner = ?`,
+      )
+      .bind(
+        prefs.discordPrivate ? 1 : 0,
+        prefs.defaultPrivate ? 1 : 0,
+        prefs.mirrorAuto ? 1 : 0,
+        now(),
+        owner,
+      ),
+  ]);
 }
 
-export function recordWebhookResult(owner: string, error: string | null): void {
-  ensureRow(owner);
-  db.prepare(
-    `UPDATE user_settings SET webhook_error = ?, webhook_error_at = ? WHERE owner = ?`,
-  ).run(error ? error.slice(0, 200) : null, error ? now() : null, owner);
+export async function recordWebhookResult(owner: string, error: string | null): Promise<void> {
+  await db().batch([
+    ensureRow(owner),
+    db()
+      .prepare(`UPDATE user_settings SET webhook_error = ?, webhook_error_at = ? WHERE owner = ?`)
+      .bind(
+        error ? error.slice(0, 200) : null,
+        error ? now() : null,
+        owner,
+      ),
+  ]);
 }

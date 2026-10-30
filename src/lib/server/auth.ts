@@ -14,7 +14,7 @@ import {
   revalidate,
   type RefreshOutcome,
 } from "./sessions.ts";
-import { ownerSlug } from "./git.ts";
+import { ownerSlug } from "./gitref.ts";
 
 function b64url(input: Buffer | string): string {
   return Buffer.from(input).toString("base64url");
@@ -88,14 +88,14 @@ export type GitAuth =
   | { kind: "anonymous" }
   | { kind: "rejected"; message: string };
 
-export function authenticateGit(header: string | undefined): GitAuth {
+export async function authenticateGit(header: string | undefined): Promise<GitAuth> {
   const basic = parseBasicAuth(header);
   if (!basic) return { kind: "anonymous" };
 
   const [username, token] = basic;
   if (!token) return { kind: "anonymous" };
 
-  const row = verifyDbToken(token);
+  const row = await verifyDbToken(token);
   if (!row) return { kind: "rejected", message: "invalid or revoked token" };
 
   if (!row.owner) {
@@ -128,23 +128,19 @@ export function gitActor(auth: GitAuth): string | null {
 
 // --- OIDC (Doughmination SSO) ---------------------------------------------------
 
-let discovered: Promise<oidc.Configuration> | null = null;
+// Only a finished discovery is kept: a pending one belongs to the request that
+// started it, and the Worker cancels it if that request ends first
+let discovered: oidc.Configuration | null = null;
 
-function oidcConfig(): Promise<oidc.Configuration> {
-  if (!discovered) {
-    const { issuer, clientId, clientSecret } = config.oidc;
-    const insecure = issuer.startsWith("http://");
-    discovered = oidc
-      .discovery(new URL(issuer), clientId, clientSecret, undefined, {
-        // Plain http is only ever a local auth-server during development.
-        execute: insecure ? [oidc.allowInsecureRequests] : [],
-      })
-      .catch((err) => {
-        // Don't cache a failed discovery; try again on the next request.
-        discovered = null;
-        throw err;
-      });
-  }
+async function oidcConfig(): Promise<oidc.Configuration> {
+  if (discovered) return discovered;
+
+  const { issuer, clientId, clientSecret } = config.oidc;
+  const insecure = issuer.startsWith("http://");
+  discovered = await oidc.discovery(new URL(issuer), clientId, clientSecret, undefined, {
+    // Plain http is only ever a local auth-server during development.
+    execute: insecure ? [oidc.allowInsecureRequests] : [],
+  });
   return discovered;
 }
 
@@ -224,7 +220,7 @@ export async function finishLogin(
     return null;
   }
 
-  rememberFromClaims(claims);
+  await rememberFromClaims(claims);
   return createSession({
     sub: String(claims.sub),
     email: str(claims.email),
@@ -240,7 +236,7 @@ async function refreshWithSso(refreshToken: string): Promise<RefreshOutcome> {
     const claims = tokens.claims();
     // Names, avatars and usernames edited in the SSO show up here without a
     // fresh sign-in. The namespace (slug) never changes.
-    if (claims?.sub) rememberFromClaims(claims);
+    if (claims?.sub) await rememberFromClaims(claims);
     return {
       kind: "ok",
       sub: claims?.sub ? String(claims.sub) : null,
@@ -259,15 +255,15 @@ async function refreshWithSso(refreshToken: string): Promise<RefreshOutcome> {
 
 /** Resolves the session cookie to a user, re-checking with the SSO when due. */
 export async function sessionUser(token: string | undefined): Promise<SessionUser | null> {
-  const found = findSession(token);
+  const found = await findSession(token);
   if (!found) return null;
 
   const session = await revalidate(found, refreshWithSso);
   if (!session) return null;
 
-  const row = findUserBySub(session.sub);
+  const row = await findUserBySub(session.sub);
   if (!row) {
-    deleteSessionRow(session.id_hash);
+    await deleteSessionRow(session.id_hash);
     return null;
   }
 
@@ -286,10 +282,10 @@ export async function sessionUser(token: string | undefined): Promise<SessionUse
  * the browser: the SSO's logout (so the SSO session ends too), or home.
  */
 export async function logout(token: string | undefined): Promise<string> {
-  const session = findSession(token);
+  const session = await findSession(token);
   const home = `${config.baseUrl}/`;
   if (!session) return home;
-  deleteSessionRow(session.id_hash);
+  await deleteSessionRow(session.id_hash);
 
   if (!oidcEnabled) return home;
   try {

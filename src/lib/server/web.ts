@@ -62,7 +62,7 @@ export async function viewable(event: RequestEvent): Promise<ViewableRepo> {
   if (!ref || !(await repoExists(ref))) notFound();
 
   const isPublic = await isRepoPublic(ref);
-  const access = accessFor({
+  const access = await accessFor({
     ref,
     isPublic,
     viewer: viewerOf(event),
@@ -94,7 +94,7 @@ export async function writableRef(event: RequestEvent): Promise<RepoRef> {
   if (!ref || !(await repoExists(ref))) notFound();
 
   const isPublic = await isRepoPublic(ref);
-  const allowed = canWrite({
+  const allowed = await canWrite({
     ref,
     isPublic,
     viewer: viewerOf(event),

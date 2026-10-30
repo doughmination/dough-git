@@ -17,17 +17,20 @@ import {
 } from "./git.ts";
 import { notFound } from "./web.ts";
 
-function readable(all: RepoSummary[], viewer: string | null): RepoSummary[] {
-  return all.filter((r) =>
-    canRead({
-      ref: {
-        owner: r.owner,
-        name: r.name,
-      },
-      isPublic: r.isPublic,
-      viewer,
-    }),
+async function readable(all: RepoSummary[], viewer: string | null): Promise<RepoSummary[]> {
+  const allowed = await Promise.all(
+    all.map((r) =>
+      canRead({
+        ref: {
+          owner: r.owner,
+          name: r.name,
+        },
+        isPublic: r.isPublic,
+        viewer,
+      }),
+    ),
   );
+  return all.filter((_, i) => allowed[i]);
 }
 
 async function profileReadme(owner: string, viewer: string | null) {
@@ -35,7 +38,7 @@ async function profileReadme(owner: string, viewer: string | null) {
   if (!ref || !(await repoExists(ref))) return null;
 
   const isPublic = await isRepoPublic(ref);
-  if (!canRead({ ref, isPublic, viewer })) return null;
+  if (!(await canRead({ ref, isPublic, viewer }))) return null;
   return headReadme(ref);
 }
 
@@ -45,10 +48,10 @@ export async function ownerPage(owner: string, viewer: string | null, withReadme
 
   const all = await listRepos();
   const owned = all.filter((r) => r.owner === owner);
-  const profile = findUserBySlug(owner);
+  const profile = await findUserBySlug(owner);
   if (!profile && owned.length === 0) notFound();
 
-  const repos = readable(
+  const repos = await readable(
     owned.filter((r) => !isProfileRepo(r.name)),
     viewer,
   );

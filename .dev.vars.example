@@ -1,0 +1,44 @@
+# .dev.vars.example
+# Copy to .dev.vars for `bun run dev`. In production these come from
+# wrangler.jsonc "vars", and the secrets from `wrangler secret put`.
+#
+# Local dev runs the git side as a plain process: start `bun run agent` (repos
+# in ./data/repos) alongside `bun run dev`, and the Worker talks to it here.
+GIT_AGENT_URL=http://localhost:4011
+
+# Public base URL (used for OIDC redirect + the clone URLs shown in the UI).
+MINIGIT_BASE_URL=http://localhost:5173
+
+MINIGIT_TITLE=dough-git
+MINIGIT_FAVICON=https://m.doughmination.gay/img/avatars/git.png
+MINIGIT_DESCRIPTION=A minimal self-hosted git mirror.
+MINIGIT_THEME_COLOR=#eb459e
+
+# Auto-create a bare repo on first authenticated push (set "false" to disable).
+MINIGIT_AUTO_CREATE=true
+
+# How many days a deleted repository stays recoverable. 0 keeps them forever.
+# The cron trigger sweeps every six hours; the recovery page sweeps its owner too.
+MINIGIT_TRASH_DAYS=30
+
+# --- Single sign-on (Doughmination SSO / auth-server) ---------------------------
+# In the SSO admin (/admin/clients) add a *confidential* application with:
+#   Redirect URI:             <MINIGIT_BASE_URL>/auth/callback
+#   Post-logout redirect URI: <MINIGIT_BASE_URL>/
+OIDC_ISSUER=https://auth.doughmination.gay
+OIDC_CLIENT_ID=
+OIDC_CLIENT_SECRET=
+OIDC_ADOPT_LEGACY_USERS=true
+
+# Signs the short-lived cookie that carries a sign-in attempt through the SSO
+# redirect. Generate with: openssl rand -hex 32
+SESSION_SECRET=
+
+# --- R2 snapshots (container only) ---------------------------------------------
+# The container's disk doesn't survive a sleep, so every repository is kept as a
+# tar in R2 and restored on boot. Make an R2 API token scoped to this bucket.
+# Unset locally: `bun run agent` then keeps repos on disk only.
+# R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+# R2_BUCKET=dough-git
+# R2_ACCESS_KEY_ID=
+# R2_SECRET_ACCESS_KEY=

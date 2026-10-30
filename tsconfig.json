@@ -1,6 +1,6 @@
 {
   "extends": "$app/tsconfig",
-  "include": ["src", "test", "*.ts"],
+  "include": ["src", "test", "worker", "container", "*.ts", "worker-configuration.d.ts"],
   "exclude": ["build", "node_modules"],
   "compilerOptions": {
     "allowImportingTsExtensions": true,

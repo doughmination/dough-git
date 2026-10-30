@@ -4,9 +4,9 @@
 
 import { dropRepoAccess } from "./access.ts";
 import { dropMirrorStatus } from "./mirror.ts";
-import type { RepoRef } from "./git.ts";
+import type { RepoRef } from "./gitref.ts";
 
-export function clearRepoMetadata(ref: RepoRef): void {
-  dropRepoAccess(ref);
-  dropMirrorStatus(ref);
+export async function clearRepoMetadata(ref: RepoRef): Promise<void> {
+  await dropRepoAccess(ref);
+  await dropMirrorStatus(ref);
 }

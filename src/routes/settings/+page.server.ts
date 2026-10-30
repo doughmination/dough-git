@@ -9,9 +9,9 @@ import { getSettings, setDiscordWebhook, setPrefs } from "#lib/server/settings.t
 import { discordWebhookUrl, maskWebhook } from "#lib/server/urls.ts";
 import { fail, field, me } from "#lib/server/web.ts";
 
-export const load: PageServerLoad = (event) => {
+export const load: PageServerLoad = async (event) => {
   const slug = sessionSlug(me(event));
-  const settings = getSettings(slug);
+  const settings = await getSettings(slug);
 
   return {
     slug,
@@ -42,14 +42,14 @@ export const actions: Actions = {
           "https://discord.com/api/webhooks/ — nothing else is accepted.",
       );
     }
-    setDiscordWebhook(slug, url);
+    await setDiscordWebhook(slug, url);
     redirect(303, "/settings?saved=1");
   },
 
   prefs: async (event) => {
     const slug = sessionSlug(me(event));
     const form = await event.request.formData();
-    setPrefs(slug, {
+    await setPrefs(slug, {
       defaultPrivate: form.get("default_private") != null,
       discordPrivate: form.get("discord_private") != null,
       mirrorAuto: form.get("mirror_auto") != null,

@@ -2,26 +2,8 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
-import { db, now, hasColumn } from "./db.ts";
-import { ownerSlug } from "./git.ts";
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS users (
-    sub        TEXT PRIMARY KEY,
-    slug       TEXT NOT NULL UNIQUE,
-    username   TEXT,
-    name       TEXT,
-    picture    TEXT,
-    created_at INTEGER NOT NULL,
-    last_login INTEGER NOT NULL
-  );
-`);
-
-// Which identity provider the `sub` belongs to. NULL marks accounts created
-// before this column existed, i.e. by the previous provider (PocketID).
-if (!hasColumn("users", "issuer")) {
-  db.exec("ALTER TABLE users ADD COLUMN issuer TEXT");
-}
+import { db, now } from "./db.ts";
+import { ownerSlug } from "./gitref.ts";
 
 export interface UserRow {
   sub: string;
@@ -34,27 +16,23 @@ export interface UserRow {
   last_login: number;
 }
 
-export function findUserBySlug(slug: string): UserRow | null {
-  return (db
-    .prepare("SELECT * FROM users WHERE slug = ?")
-    .get(slug) as unknown as UserRow) ?? null;
+export function findUserBySlug(slug: string): Promise<UserRow | null> {
+  return db().prepare("SELECT * FROM users WHERE slug = ?").bind(slug).first<UserRow>();
 }
 
-export function findUserBySub(sub: string): UserRow | null {
-  return (db
-    .prepare("SELECT * FROM users WHERE sub = ?")
-    .get(sub) as unknown as UserRow) ?? null;
+export function findUserBySub(sub: string): Promise<UserRow | null> {
+  return db().prepare("SELECT * FROM users WHERE sub = ?").bind(sub).first<UserRow>();
 }
 
-function uniqueSlug(preferred: string, sub: string): string {
-  const taken = (slug: string) => {
-    const row = findUserBySlug(slug);
+async function uniqueSlug(preferred: string, sub: string): Promise<string> {
+  const taken = async (slug: string) => {
+    const row = await findUserBySlug(slug);
     return row !== null && row.sub !== sub;
   };
-  if (!taken(preferred)) return preferred;
+  if (!(await taken(preferred))) return preferred;
   for (let n = 2; n < 1000; n++) {
     const candidate = `${preferred}-${n}`;
-    if (!taken(candidate)) return candidate;
+    if (!(await taken(candidate))) return candidate;
   }
   return `${preferred}-${sub.replace(/[^a-z0-9]/gi, "").slice(0, 8).toLowerCase()}`;
 }
@@ -73,12 +51,6 @@ export interface RememberInput {
   adoptLegacy?: boolean;
 }
 
-function hasTable(name: string): boolean {
-  return Boolean(
-    db.prepare("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?").get(name),
-  );
-}
-
 /**
  * Moving identity providers changes every `sub`, but namespaces, tokens and
  * collaborator grants all hang off the slug. So when someone signs in from the
@@ -89,32 +61,28 @@ function hasTable(name: string): boolean {
  * Usernames on the new provider are issued by its admins, which is what makes
  * matching on them acceptable. Each old account can only be adopted once.
  */
-function adoptLegacyUser(input: RememberInput): UserRow | null {
+async function adoptLegacyUser(input: RememberInput): Promise<UserRow | null> {
   if (!input.username || !input.issuer) return null;
   const slug = ownerSlug(input.username);
-  const legacy = (db
+  const legacy = await db()
     .prepare("SELECT * FROM users WHERE slug = ? AND issuer IS NULL")
-    .get(slug) as unknown as UserRow) ?? null;
+    .bind(slug)
+    .first<UserRow>();
   if (!legacy) return null;
 
-  db.exec("BEGIN");
-  try {
-    db.prepare("UPDATE users SET sub = ?, issuer = ? WHERE sub = ?").run(
-      input.sub,
-      input.issuer,
-      legacy.sub,
-    );
-    if (hasTable("tokens")) {
-      db.prepare("UPDATE tokens SET created_by = ? WHERE created_by = ?").run(
+  // A batch is one transaction: both move, or neither does
+  await db().batch([
+    db()
+      .prepare("UPDATE users SET sub = ?, issuer = ? WHERE sub = ?")
+      .bind(
         input.sub,
+        input.issuer,
         legacy.sub,
-      );
-    }
-    db.exec("COMMIT");
-  } catch (err) {
-    db.exec("ROLLBACK");
-    throw err;
-  }
+      ),
+    db()
+      .prepare("UPDATE tokens SET created_by = ? WHERE created_by = ?")
+      .bind(input.sub, legacy.sub),
+  ]);
 
   console.warn(
     `[auth] adopted pre-migration account "${slug}" for ${input.issuer} subject ${input.sub}`,
@@ -122,9 +90,9 @@ function adoptLegacyUser(input: RememberInput): UserRow | null {
   return { ...legacy, sub: input.sub, issuer: input.issuer };
 }
 
-export function rememberUser(input: RememberInput): UserRow {
+export async function rememberUser(input: RememberInput): Promise<UserRow> {
   const existing =
-    findUserBySub(input.sub) ?? (input.adoptLegacy ? adoptLegacyUser(input) : null);
+    (await findUserBySub(input.sub)) ?? (input.adoptLegacy ? await adoptLegacyUser(input) : null);
   const ts = now();
   const issuer = input.issuer ?? null;
   const profile = {
@@ -135,26 +103,48 @@ export function rememberUser(input: RememberInput): UserRow {
   };
 
   if (existing) {
-    db.prepare(
-      `UPDATE users SET username = ?, name = ?, picture = ?, last_login = ?,
-         issuer = COALESCE(?, issuer)
-       WHERE sub = ?`,
-    ).run(input.username, input.name, input.picture, ts, issuer, input.sub);
+    await db()
+      .prepare(
+        `UPDATE users SET username = ?, name = ?, picture = ?, last_login = ?,
+           issuer = COALESCE(?, issuer)
+         WHERE sub = ?`,
+      )
+      .bind(
+        input.username,
+        input.name,
+        input.picture,
+        ts,
+        issuer,
+        input.sub,
+      )
+      .run();
     return { ...existing, ...profile, issuer: issuer ?? existing.issuer, last_login: ts };
   }
 
-  const slug = uniqueSlug(
+  const slug = await uniqueSlug(
     ownerSlug(input.username ?? input.name ?? "user"),
     input.sub,
   );
-  db.prepare(
-    `INSERT INTO users (sub, slug, username, name, picture, issuer, created_at, last_login)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).run(input.sub, slug, input.username, input.name, input.picture, issuer, ts, ts);
+  await db()
+    .prepare(
+      `INSERT INTO users (sub, slug, username, name, picture, issuer, created_at, last_login)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    )
+    .bind(
+      input.sub,
+      slug,
+      input.username,
+      input.name,
+      input.picture,
+      issuer,
+      ts,
+      ts,
+    )
+    .run();
   return { ...profile, slug, issuer, created_at: ts, last_login: ts };
 }
 
-export function slugForSub(sub: string | null): string | null {
+export async function slugForSub(sub: string | null): Promise<string | null> {
   if (!sub) return null;
-  return findUserBySub(sub)?.slug ?? null;
+  return (await findUserBySub(sub))?.slug ?? null;
 }
