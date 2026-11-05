@@ -22,7 +22,7 @@
   "dependencies": {
     "@cloudflare/containers": "^0.3.7",
     "iconsax": "^0.1.1",
-    "openid-client": "^6.8.8",
+    "openid-client": "^6.8.9",
     "simple-icons": "npm:@icons-pack/svelte-simple-icons@^7.2.0"
   },
   "devDependencies": {
