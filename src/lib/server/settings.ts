@@ -2,7 +2,7 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
-import { db, now } from "./db.ts";
+import { db, now, type Statement } from "./db.ts";
 
 export interface Settings {
   owner: string;
@@ -50,7 +50,7 @@ export async function getSettings(owner: string): Promise<Settings> {
   };
 }
 
-function ensureRow(owner: string): D1PreparedStatement {
+function ensureRow(owner: string): Statement {
   return db()
     .prepare(
       `INSERT INTO user_settings (owner, updated_at) VALUES (?, ?)

@@ -1,0 +1,29 @@
+{
+  "nodeModulesDir": "auto",
+
+  "tasks": {
+    "dev": "deno run --allow-all --env-file=.env npm:vite dev",
+    "build": "vite build",
+    "preview": "deno run --allow-net --allow-env --allow-read=. --allow-write=./data --allow-run=git --allow-sys=uid,gid --env-file=.env deploy/server.ts",
+    "prepare": "svelte-kit sync || echo ''",
+    "check": "svelte-kit sync && svelte-check --tsgo --tsconfig ./tsconfig.json",
+    "test": "deno run --allow-all test/run.ts"
+  },
+
+  "imports": {
+    "#lib": "./src/lib/index.ts",
+    "#lib/": "./src/lib/",
+    "@deno/svelte-adapter": "npm:@deno/svelte-adapter@^0.2.2",
+    "@iconify-json/ic": "npm:@iconify-json/ic@^1.2.4",
+    "@sveltejs/kit": "npm:@sveltejs/kit@^3.1.0",
+    "@sveltejs/vite-plugin-svelte": "npm:@sveltejs/vite-plugin-svelte@^7.3.1",
+    "@types/node": "npm:@types/node@^24.19.2",
+    "@typescript/native-preview": "npm:@typescript/native-preview@^7.0.0-dev.20260707.2",
+    "openid-client": "npm:openid-client@^6.8.8",
+    "svelte": "npm:svelte@^5.57.3",
+    "svelte-check": "npm:svelte-check@^4.7.7",
+    "typescript": "npm:typescript@~6.0.3",
+    "unplugin-icons": "npm:unplugin-icons@^24.0.0",
+    "vite": "npm:vite@^8.3.5"
+  }
+}

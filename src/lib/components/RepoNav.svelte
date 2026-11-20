@@ -3,6 +3,9 @@
 -->
 
 <script lang="ts">
+  import IcCommit from "~icons/ic/outline-commit";
+  import IcDescription from "~icons/ic/outline-description";
+  import IcFolder from "~icons/ic/outline-folder";
   import Tabs from "#lib/components/Tabs.svelte";
 
   let {
@@ -26,19 +29,19 @@
     {
       id: "summary",
       label: "summary",
-      icon: "document-text",
+      icon: IcDescription,
       href: `${base}${query}`,
     },
     {
       id: "log",
       label: "log",
-      icon: "record-circle",
+      icon: IcCommit,
       href: `${base}/log${query}`,
     },
     {
       id: "tree",
       label: "tree",
-      icon: "folder-2",
+      icon: IcFolder,
       href: `${base}/tree${query}`,
     },
   ]}

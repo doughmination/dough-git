@@ -136,8 +136,8 @@ button.small,
   font-size: 0.82rem;
 }
 
-button iconsax-icon svg,
-.btn iconsax-icon svg {
+button svg.icon,
+.btn svg.icon {
   width: 1.1em;
   height: 1.1em;
 }

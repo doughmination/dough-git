@@ -2,32 +2,44 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
-import adapter from "@sveltejs/adapter-cloudflare";
+import adapter from "@deno/svelte-adapter";
 import { sveltekit } from "@sveltejs/kit/vite";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
+import Icons from "unplugin-icons/vite";
 
 export default defineConfig({
+  resolve: {
+    // Kit 3 only reads `#lib` from package.json imports, and this project has none
+    alias: [
+      {
+        find: /^#lib$/,
+        replacement: fileURLToPath(new URL("./src/lib/index.ts", import.meta.url)),
+      },
+      {
+        find: /^#lib\//,
+        replacement: fileURLToPath(new URL("./src/lib/", import.meta.url)),
+      },
+    ],
+  },
   plugins: [
     sveltekit({
       compilerOptions: {
         // Runes everywhere except libraries
         runes: ({ filename }) => (filename.split(/[/\\]/).includes("node_modules") ? undefined : true),
       },
-      // worker/index.ts wraps the Worker this produces, adding the container and cron
-      adapter: adapter({
-        config: "wrangler.kit.jsonc",
-      }),
+      adapter: adapter(),
+      // Inspector breaks under Deno's symlinked node_modules (its CSS fails to load)
+      inspector: false,
       csp: {
         mode: "auto",
         directives: {
           "default-src": ["self"],
           "script-src": ["self"],
-          // Two exact style attributes only: iconsax's color:currentColor on every icon,
-          // and SvelteKit's visually-hidden route announcer
+          // One exact style attribute only: SvelteKit's visually-hidden route announcer
           "style-src": [
             "self",
             "unsafe-hashes",
-            "sha256-muhGX4Mn7np2XQi6DH6Iz+0SHdws6/BLgVigE46O3Xc=",
             "sha256-S8qMpvofolR8Mpjy4kQvEm7m1q8clzU4dfDH0AmvZjo=",
           ],
           "img-src": ["self", "data:", "https:"],
@@ -41,9 +53,10 @@ export default defineConfig({
         },
       },
     }),
+    // Turns each `~icons/<set>/<name>` import into an inline-SVG Svelte component at build time
+    Icons({
+      compiler: "svelte",
+      scale: 1,
+    }),
   ],
-  // iconsax fetches its icon data relative to its own file, which pre-bundling breaks
-  optimizeDeps: {
-    exclude: ["iconsax"],
-  },
 });

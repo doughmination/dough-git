@@ -3,6 +3,8 @@
 -->
 
 <script lang="ts">
+  import IcForkRight from "~icons/ic/outline-fork-right";
+  import IcPerson from "~icons/ic/outline-person";
   import { displayName, fmtDate } from "#lib";
   import Avatar from "#lib/components/Avatar.svelte";
   import Tabs from "#lib/components/Tabs.svelte";
@@ -55,13 +57,13 @@
     {
       id: "profile",
       label: "profile",
-      icon: "user",
+      icon: IcPerson,
       href: `/${owner}`,
     },
     {
       id: "repos",
       label: "repositories",
-      icon: "hierarchy",
+      icon: IcForkRight,
       href: `/${owner}/+repos`,
     },
   ]}

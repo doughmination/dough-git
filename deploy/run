@@ -1,0 +1,40 @@
+#!/bin/sh
+# deploy/run
+# LICENCED DASL-1.0 (c) Clove Twilight
+# runit service for dough-git
+exec 2>&1
+
+cd /srv/clove/dough-git || exit 1
+
+export HOST=127.0.0.1
+export PORT=3102
+export NODE_ENV=production
+
+# Public URL behind the proxy: SvelteKit needs it for form actions (CSRF check),
+# the SSO redirect URI and the clone URLs shown in the UI
+export ORIGIN=https://backup.doughmination.gay
+export MINIGIT_BASE_URL=https://backup.doughmination.gay
+
+# Single sign-on. The client secret is in .env with the other secrets
+export OIDC_ISSUER=https://auth.doughmination.gay
+export OIDC_CLIENT_ID=dough-git
+
+# Repositories and the SQLite database, the only things this service writes
+export MINIGIT_REPOS_ROOT=/srv/clove/dough-git/data/repos
+export MINIGIT_DB_PATH=/srv/clove/dough-git/data/dough-git.db
+
+# Run as clove rather than root. chpst doesn't change HOME, so set it for Deno's cache and git
+export HOME=/home/clove
+
+# Secrets (OIDC_CLIENT_SECRET, SESSION_SECRET) live in /srv/clove/dough-git/.env,
+# which Deno skips if it's missing. Reads stay in this folder, writes in data/,
+# and git is the only program it may start
+exec chpst -u clove /usr/bin/deno run \
+	--allow-net \
+	--allow-env \
+	--allow-read=. \
+	--allow-write=./data \
+	--allow-run=git \
+	--allow-sys=uid,gid \
+	--env-file=.env \
+	deploy/server.ts

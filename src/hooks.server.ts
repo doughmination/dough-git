@@ -5,6 +5,7 @@
 import type { Handle, HandleServerError, ServerInit } from "@sveltejs/kit/hooks";
 import { config, oidcEnabled } from "#lib/server/config.ts";
 import { SESSION_COOKIE, oidcIssuer, sessionUser } from "#lib/server/auth.ts";
+import { sweep } from "#lib/server/sweep.ts";
 
 const SITE_ORIGIN = new URL(config.baseUrl).origin;
 
@@ -14,10 +15,16 @@ const SSO_ORIGIN = config.oidc.issuer ? new URL(config.oidc.issuer).origin : "";
 
 const GIT_TRANSPORT = /\/(?:git-upload-pack|git-receive-pack|info\/refs)$/;
 
+const SWEEP_EVERY_MS = 6 * 60 * 60 * 1000;
+
 export const init: ServerInit = async () => {
+  // Also once at boot: a restart resets the interval, and deploys can come more often than 6h
+  void sweep();
+  setInterval(() => void sweep(), SWEEP_EVERY_MS);
+
   console.log(`  oidc:       ${oidcEnabled ? "enabled" : "disabled"}`);
   console.log(
-    `  trash:      ${config.trashDays > 0 ? `${config.trashDays}d, swept every 6h by cron` : "kept forever"}`,
+    `  trash:      ${config.trashDays > 0 ? `${config.trashDays}d, swept every 6h` : "kept forever"}`,
   );
   if (oidcEnabled) {
     try {

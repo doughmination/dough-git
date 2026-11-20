@@ -2,7 +2,7 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
-// Run by the cron trigger in worker/index.ts, every six hours
+// Run by the init hook in src/hooks.server.ts: at boot, then every six hours
 
 import { purgeExpiredSessions } from "./sessions.ts";
 import { purgeAllExpired } from "./git.ts";

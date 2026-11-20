@@ -3,20 +3,8 @@
 version: 2
 
 updates:
-  # JavaScript dependencies (package.json + bun.lock)
-  - package-ecosystem: "bun"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-
-  # Base image in the Dockerfile
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-
-  # Actions used by the workflows in .github/workflows
+  # Actions used by the workflows in .github/workflows. Dependabot has no Deno
+  # ecosystem, so deno.json is updated by hand (`deno outdated --update`)
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

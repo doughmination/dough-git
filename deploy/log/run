@@ -1,0 +1,9 @@
+#!/bin/sh
+# deploy/log/run
+# LICENCED DASL-1.0 (c) Clove Twilight
+# runit log service for dough-git: everything the server prints ends up here,
+# timestamped and rotated by svlogd
+LOG_DIR=/var/log/dough-git
+
+mkdir -p "$LOG_DIR"
+exec svlogd -tt "$LOG_DIR"

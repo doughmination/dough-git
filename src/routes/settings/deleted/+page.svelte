@@ -3,6 +3,9 @@
 -->
 
 <script lang="ts">
+  import IcDelete from "~icons/ic/outline-delete";
+  import IcForkRight from "~icons/ic/outline-fork-right";
+  import IcRestore from "~icons/ic/outline-restore";
   import { fmtDate } from "#lib";
   import Meta from "#lib/components/Meta.svelte";
   import ConfirmForm from "#lib/components/ConfirmForm.svelte";
@@ -18,7 +21,7 @@
 
 <Meta title="recently deleted" description="Recover deleted repositories." noindex />
 
-<h2 class="section-title"><iconsax-icon name="trash" type="bulk" size="20"></iconsax-icon>Recently deleted</h2>
+<h2 class="section-title"><IcDelete class="icon" width="20" height="20" />Recently deleted</h2>
 <p class="muted">
   {data.retentionDays > 0
     ? `Deleted repositories are kept for ${data.retentionDays} days, then purged the next time you open this page.`
@@ -42,7 +45,7 @@
       {#each data.entries as entry (entry.entry)}
         <tr>
           <td>
-            <iconsax-icon name="hierarchy" type="bulk" size="14"></iconsax-icon>
+            <IcForkRight class="icon" width="14" height="14" />
             {entry.name}
             {#if entry.degraded}
               <br /><small class="warn">
@@ -68,7 +71,7 @@
           <td>
             <form method="post" action="?/restore">
               <input type="hidden" name="entry" value={entry.entry} />
-              <button type="submit" class="small"><iconsax-icon name="rotate-left" type="bulk" size="14"></iconsax-icon>restore</button>
+              <button type="submit" class="small"><IcRestore class="icon" width="14" height="14" />restore</button>
             </form>
           </td>
           <td>
@@ -77,7 +80,7 @@
               prompt="Permanently delete {entry.name}? This destroys the git data and cannot be undone."
             >
               <input type="hidden" name="entry" value={entry.entry} />
-              <button type="submit" class="small danger"><iconsax-icon name="trash" type="bulk" size="14"></iconsax-icon>delete permanently</button>
+              <button type="submit" class="small danger"><IcDelete class="icon" width="14" height="14" />delete permanently</button>
             </ConfirmForm>
           </td>
         </tr>

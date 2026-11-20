@@ -3,6 +3,12 @@
 -->
 
 <script lang="ts">
+  import IcChat from "~icons/ic/outline-chat";
+  import IcDelete from "~icons/ic/outline-delete";
+  import IcLink from "~icons/ic/outline-link";
+  import IcPerson from "~icons/ic/outline-person";
+  import IcSave from "~icons/ic/outline-save";
+  import IcTune from "~icons/ic/outline-tune";
   import { fmtDate } from "#lib";
   import Meta from "#lib/components/Meta.svelte";
   import ConfirmForm from "#lib/components/ConfirmForm.svelte";
@@ -16,7 +22,7 @@
   <p class="notice ok" role="status">Saved.</p>
 {/if}
 
-<h2 class="section-title"><iconsax-icon name="message-text" type="bulk" size="20"></iconsax-icon>Discord notifications</h2>
+<h2 class="section-title"><IcChat class="icon" width="20" height="20" />Discord notifications</h2>
 <p class="muted">
   Announces repositories being created and deleted, and commits being pushed. Only repositories you own are
   announced, and only to this webhook.
@@ -37,21 +43,21 @@
 
   <form method="post" action="?/discord" class="row">
     <label class="field-label with-icon" for="discord-url">
-      <iconsax-icon name="link" type="bulk" size="16"></iconsax-icon>webhook
+      <IcLink class="icon" width="16" height="16" />webhook
     </label>
     <input id="discord-url" type="url" name="url" autocomplete="off" placeholder="https://discord.com/api/webhooks/…" />
-    <button type="submit" class="primary"><iconsax-icon name="save-2" type="bulk" size="16"></iconsax-icon>save</button>
+    <button type="submit" class="primary"><IcSave class="icon" width="16" height="16" />save</button>
   </form>
 
   {#if data.webhook}
     <ConfirmForm action="?/discord" prompt="Remove the Discord webhook? Events will stop being announced.">
       <input type="hidden" name="url" value="" />
-      <button type="submit" class="danger"><iconsax-icon name="trash" type="bulk" size="16"></iconsax-icon>remove webhook</button>
+      <button type="submit" class="danger"><IcDelete class="icon" width="16" height="16" />remove webhook</button>
     </ConfirmForm>
   {/if}
 </section>
 
-<h2 class="section-title"><iconsax-icon name="slider-horizontal" type="bulk" size="20"></iconsax-icon>Preferences</h2>
+<h2 class="section-title"><IcTune class="icon" width="20" height="20" />Preferences</h2>
 <form method="post" action="?/prefs" class="panel">
   <label class="check">
     <input type="checkbox" name="default_private" checked={data.defaultPrivate} />
@@ -76,12 +82,12 @@
   </label>
   <div>
     <button type="submit" class="primary">
-      <iconsax-icon name="save-2" type="bulk" size="16"></iconsax-icon>save preferences
+      <IcSave class="icon" width="16" height="16" />save preferences
     </button>
   </div>
 </form>
 
-<h2 class="section-title"><iconsax-icon name="user" type="bulk" size="20"></iconsax-icon>Account</h2>
+<h2 class="section-title"><IcPerson class="icon" width="20" height="20" />Account</h2>
 <p class="muted">
   Your name and avatar come from your SSO account and refresh automatically, so there is nothing to edit
   here{#if data.accountUrl}

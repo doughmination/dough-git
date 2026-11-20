@@ -8,6 +8,5 @@ data/
 build/
 .svelte-kit/
 
-# wrangler
-.wrangler
-.dev.vars
+# Deno adapter output
+/.deno-deploy

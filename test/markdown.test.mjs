@@ -74,7 +74,7 @@ check(
 );
 check(
   "note alert includes an inline icon",
-  has("> [!NOTE]\n> Heads up.", '<iconsax-icon name="info-circle"'),
+  has("> [!NOTE]\n> Heads up.", '<svg class="icon" width="16" height="16" viewBox="0 0 24 24"'),
 );
 check(
   "tip alert",

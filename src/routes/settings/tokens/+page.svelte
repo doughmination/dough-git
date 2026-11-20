@@ -3,6 +3,10 @@
 -->
 
 <script lang="ts">
+  import IcAdd from "~icons/ic/outline-add";
+  import IcCancel from "~icons/ic/outline-cancel";
+  import IcKey from "~icons/ic/outline-key";
+  import IcLocalOffer from "~icons/ic/outline-local-offer";
   import { fmtDate } from "#lib";
   import Meta from "#lib/components/Meta.svelte";
 
@@ -15,7 +19,7 @@
 
 <Meta title="access tokens" description="Manage git access tokens." noindex />
 
-<h2 class="section-title"><iconsax-icon name="key" type="bulk" size="20"></iconsax-icon>Access tokens</h2>
+<h2 class="section-title"><IcKey class="icon" width="20" height="20" />Access tokens</h2>
 <p class="muted">
   These tokens act as <code>{data.slug}</code>: use that as the git <strong>username</strong> and the token as the
   <strong>password</strong>. They can only push to repositories under <code>{data.slug}/</code>.
@@ -30,9 +34,9 @@
 {/if}
 
 <form method="post" action="?/create" class="panel row">
-  <label class="field-label with-icon" for="token-label"><iconsax-icon name="tag" type="bulk" size="16"></iconsax-icon>label</label>
+  <label class="field-label with-icon" for="token-label"><IcLocalOffer class="icon" width="16" height="16" />label</label>
   <input id="token-label" type="text" name="label" placeholder="laptop, backup cron, ..." />
-  <button type="submit" class="primary"><iconsax-icon name="add" type="bulk" size="16"></iconsax-icon>create token</button>
+  <button type="submit" class="primary"><IcAdd class="icon" width="16" height="16" />create token</button>
 </form>
 
 <div class="table-wrap">
@@ -56,7 +60,7 @@
           <td>
             <form method="post" action="?/revoke">
               <input type="hidden" name="id" value={token.id} />
-              <button type="submit" class="small danger"><iconsax-icon name="close-circle" type="bulk" size="14"></iconsax-icon>revoke</button>
+              <button type="submit" class="small danger"><IcCancel class="icon" width="14" height="14" />revoke</button>
             </form>
           </td>
         </tr>

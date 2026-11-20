@@ -3,6 +3,9 @@
 -->
 
 <script lang="ts">
+  import IcArrowUpward from "~icons/ic/outline-arrow-upward";
+  import IcDescription from "~icons/ic/outline-description";
+  import IcFolder from "~icons/ic/outline-folder";
   import Meta from "#lib/components/Meta.svelte";
   import RepoNav from "#lib/components/RepoNav.svelte";
   import RevPicker from "#lib/components/RevPicker.svelte";
@@ -38,7 +41,7 @@
           <tr>
             <td class="mono"></td>
             <td>
-              <iconsax-icon name="arrow-up-01" type="bulk" size="14"></iconsax-icon>
+              <IcArrowUpward class="icon" width="14" height="14" />
               <a href="{base}/tree/{up}{data.query}">../</a>
             </td>
             <td></td>
@@ -49,10 +52,10 @@
             <td class="mono">{entry.mode}</td>
             <td>
               {#if entry.type === "tree"}
-                <iconsax-icon name="folder-2" type="bulk" size="14"></iconsax-icon>
+                <IcFolder class="icon" width="14" height="14" />
                 <a href="{base}/tree/{child(entry.name)}{data.query}">{entry.name}/</a>
               {:else}
-                <iconsax-icon name="document-text" type="bulk" size="14"></iconsax-icon>
+                <IcDescription class="icon" width="14" height="14" />
                 <a href="{base}/blob/{child(entry.name)}{data.query}">{entry.name}</a>
               {/if}
             </td>

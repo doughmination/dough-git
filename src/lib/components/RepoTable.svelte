@@ -3,6 +3,8 @@
 -->
 
 <script lang="ts">
+  import IcForkRight from "~icons/ic/outline-fork-right";
+  import IcPeople from "~icons/ic/outline-people";
   import { fmtDate } from "#lib";
   import Visibility from "#lib/components/Visibility.svelte";
 
@@ -40,11 +42,11 @@
       {#each repos as repo (`${repo.owner}/${repo.name}`)}
         <tr>
           <td class="repo-name">
-            <iconsax-icon name="hierarchy" type="bulk" size="16"></iconsax-icon>
+            <IcForkRight class="icon" width="16" height="16" />
             {#if showOwner}
               <a class="muted" href="/{repo.owner}">{repo.owner}</a>/{/if}<a href="/{repo.owner}/{repo.name}">{repo.name}</a>
             {#if repo.shared}
-              <span class="badge"><iconsax-icon name="people" type="bulk" size="12"></iconsax-icon> shared</span>
+              <span class="badge"><IcPeople class="icon" width="12" height="12" /> shared</span>
             {/if}
           </td>
           <td class="muted">{repo.description}</td>

@@ -24,7 +24,7 @@ const {
   notifyRepoDeleted,
   notifyPush,
 } = await import("../src/lib/server/notify.ts");
-const { createRepo, refDir, localMirrorRefs } = await import("../container/git.ts");
+const { createRepo, refDir, localMirrorRefs } = await import("../src/lib/server/git.ts");
 const { setDiscordWebhook, setPrefs, getSettings } = await import(
   "../src/lib/server/settings.ts"
 );

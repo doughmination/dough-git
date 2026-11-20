@@ -1,4 +1,4 @@
-/* container/smart-http.ts
+/* src/lib/server/smart-http.ts
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 

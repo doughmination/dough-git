@@ -3,6 +3,7 @@
 -->
 
 <script lang="ts">
+  import IcArrowBack from "~icons/ic/outline-arrow-back";
   import { page } from "$app/state";
   import Meta from "#lib/components/Meta.svelte";
 
@@ -19,7 +20,7 @@
     <h1>{title}</h1>
     <p class="muted">{message}</p>
     <p>
-      <a class="btn" href="/"><iconsax-icon name="arrow-left-01" type="bulk" size="16"></iconsax-icon>all repositories</a>
+      <a class="btn" href="/"><IcArrowBack class="icon" width="16" height="16" />all repositories</a>
     </p>
   </section>
 </div>

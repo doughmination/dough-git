@@ -2,7 +2,8 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
-// How a mirror's last check reads on the repository page
+// How a mirror's last check reads on the repository page. Each glyph names a
+// Material outline icon, which the page maps to its component
 
 import { ago } from "../index.ts";
 import { mirrorSlug } from "./urls.ts";
@@ -12,27 +13,27 @@ import type { MirrorStatus } from "./mirror.ts";
 const MIRROR_LABELS: Record<string, { label: string; glyph: string; cls: string }> = {
   synced: {
     label: "Up to date",
-    glyph: "tick-circle",
+    glyph: "check-circle",
     cls: "good",
   },
   ahead: {
     label: "Mirror behind",
-    glyph: "arrow-up-01",
+    glyph: "arrow-upward",
     cls: "warn",
   },
   behind: {
     label: "Local behind",
-    glyph: "arrow-down-01",
+    glyph: "arrow-downward",
     cls: "warn",
   },
   diverged: {
     label: "Diverged",
-    glyph: "danger",
+    glyph: "warning",
     cls: "bad",
   },
   out_of_sync: {
     label: "Out of sync",
-    glyph: "danger",
+    glyph: "warning",
     cls: "bad",
   },
   denied: {
@@ -42,14 +43,14 @@ const MIRROR_LABELS: Record<string, { label: string; glyph: string; cls: string 
   },
   missing: {
     label: "Repository missing",
-    glyph: "close-circle",
+    glyph: "cancel",
     cls: "bad",
   },
 };
 
 const UNKNOWN_STATE = {
   label: "Unavailable",
-  glyph: "message-question",
+  glyph: "help-outline",
   cls: "bad",
 };
 

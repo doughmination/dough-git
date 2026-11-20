@@ -1,13 +1,19 @@
 {
   "extends": "$app/tsconfig",
-  "include": ["src", "test", "worker", "container", "*.ts", "worker-configuration.d.ts"],
-  "exclude": ["build", "node_modules"],
+  "include": ["src", "test", "*.ts"],
+  "exclude": ["build", "node_modules", ".deno-deploy", "test/run.ts"],
   "compilerOptions": {
     "allowImportingTsExtensions": true,
     "checkJs": false,
     "strict": true,
     "skipLibCheck": true,
     "noUncheckedIndexedAccess": true,
-    "types": ["$app/types", "bun"]
+    "types": ["$app/types", "node"],
+
+    // Mirrors the `#lib` alias in vite.config.ts, since there is no package.json imports field
+    "paths": {
+      "#lib": ["./src/lib/index.ts"],
+      "#lib/*": ["./src/lib/*"]
+    }
   }
 }

@@ -110,7 +110,7 @@ tbody tr:hover td {
   background: rgb(255 255 255 / 2%);
 }
 
-td iconsax-icon {
+td svg.icon {
   vertical-align: -0.2em;
   color: var(--accent);
 }

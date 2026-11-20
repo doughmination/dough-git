@@ -5,7 +5,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { db, now } from "./db.ts";
 
-// Browser sessions live in D1 rather than in a signed cookie so they can be
+// Browser sessions live in the database rather than in a signed cookie so they can be
 // ended from the server side: on logout, and when the SSO stops vouching for
 // the account (disabled, removed from the app's allowed groups, signed out
 // everywhere).
@@ -110,7 +110,7 @@ export type Refresher = (refreshToken: string) => Promise<RefreshOutcome>;
  * Makes sure the SSO still vouches for a session, asking at most every
  * RECHECK_AFTER seconds. Refresh tokens rotate on every use and replaying one
  * shuts the whole grant down, so concurrent requests on one session let a
- * single one refresh (claimed in D1) instead of racing with the same token.
+ * single one refresh (claimed in the database) instead of racing with the same token.
  */
 export function revalidate(row: SessionRow, refresh: Refresher): Promise<SessionRow | null> {
   const ts = now();

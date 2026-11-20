@@ -3,6 +3,7 @@
 -->
 
 <script lang="ts">
+  import IcArrowBack from "~icons/ic/outline-arrow-back";
   import { fmtBytes } from "#lib";
   import Meta from "#lib/components/Meta.svelte";
   import RepoNav from "#lib/components/RepoNav.svelte";
@@ -25,7 +26,7 @@
 
   <p class="muted">
     <a class="with-icon" href="/{data.owner}/{data.name}/tree/{up}{data.query}">
-      <iconsax-icon name="arrow-left-01" type="bulk" size="16"></iconsax-icon>back to {up || "tree"}
+      <IcArrowBack class="icon" width="16" height="16" />back to {up || "tree"}
     </a>
   </p>
 

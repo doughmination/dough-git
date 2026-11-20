@@ -2,7 +2,7 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
-import { waitUntil } from "cloudflare:workers";
+import { background } from "./background.ts";
 import { config } from "./config.ts";
 import { authenticateGit, gitActor } from "./auth.ts";
 import { canRead, canWrite } from "./access.ts";
@@ -10,17 +10,18 @@ import { clearRepoMetadata } from "./repometa.ts";
 import { notifyPush, notifyRepoCreated } from "./notify.ts";
 import { markStale } from "./mirror.ts";
 import {
-  agentFetch,
   initBareRepo,
   isRepoPublic,
   localMirrorRefs,
+  refDir,
   refSlug,
   repoExists,
   trashHasName,
   type RepoRef,
 } from "./git.ts";
+import { advertiseResponse, serviceRpc, type GitService } from "./smart-http.ts";
 
-export type GitService = "git-upload-pack" | "git-receive-pack";
+export type { GitService };
 
 export const GIT_SERVICES: GitService[] = ["git-upload-pack", "git-receive-pack"];
 
@@ -101,15 +102,11 @@ export async function gitGate(request: Request, ref: RepoRef, needPush: boolean)
   return DENY(new Response("repository not found\n", { status: 404 }));
 }
 
-function smartPath(ref: RepoRef, rest: string): string {
-  return `/smart/${encodeURIComponent(ref.owner)}/${encodeURIComponent(ref.name)}/${rest}`;
-}
-
 /** The info/refs advertisement, once the gate lets the request through */
 export async function advertise(request: Request, ref: RepoRef, service: GitService): Promise<Response> {
   const gate = await gitGate(request, ref, service === "git-receive-pack");
   if (gate.response) return gate.response;
-  return agentFetch(smartPath(ref, `info/refs?service=${service}`));
+  return advertiseResponse(refDir(ref), service);
 }
 
 /** Serves git-upload-pack or git-receive-pack once the gate lets the request through */
@@ -122,20 +119,6 @@ export async function rpc(request: Request, ref: RepoRef, service: GitService): 
   const actor = gate.actor;
   const isPublic = isPush ? await isRepoPublic(ref) : false;
 
-  const headers = new Headers({
-    "Content-Type": `application/x-${service}-request`,
-  });
-  const encoding = request.headers.get("content-encoding");
-  if (encoding) headers.set("Content-Encoding", encoding);
-
-  const upstream = await agentFetch(smartPath(ref, service), {
-    method: "POST",
-    headers,
-    body: request.body,
-  });
-  if (!isPush || !upstream.body) return upstream;
-
-  // The container closes the stream only once the push is safe in R2
   const afterPush = async () => {
     try {
       const after = await localMirrorRefs(ref);
@@ -150,12 +133,16 @@ export async function rpc(request: Request, ref: RepoRef, service: GitService): 
     }
   };
 
-  const body = upstream.body.pipeThrough(
-    new TransformStream<Uint8Array, Uint8Array>({
-      flush() {
-        waitUntil(afterPush());
-      },
-    }),
-  );
-  return new Response(body, upstream);
+  return serviceRpc({
+    repoDir: refDir(ref),
+    service,
+    body: request.body,
+    gzip: request.headers.get("content-encoding") === "gzip",
+    // receive-pack has updated the refs by the time it exits
+    onDone: (code) => {
+      if (!isPush) return;
+      if (code === 0) background(afterPush());
+      else console.warn(`[git] receive-pack for ${refSlug(ref)} exited ${code}`);
+    },
+  });
 }

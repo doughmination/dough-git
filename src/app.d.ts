@@ -2,6 +2,8 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
+/// <reference types="unplugin-icons/types/svelte5" />
+
 import type { SessionUser } from "#lib/server/auth.ts";
 
 declare global {
@@ -14,19 +16,6 @@ declare global {
     interface Locals {
       user: SessionUser | null;
     }
-  }
-}
-
-// <iconsax-icon> is registered by `import "iconsax"` in src/hooks.client.ts
-declare module "svelte/elements" {
-  export interface SvelteHTMLElements {
-    "iconsax-icon": HTMLAttributes<HTMLElement> & {
-      name: string;
-      type?: "bold" | "broken" | "bulk" | "linear" | "outline" | "twotone";
-      size?: number | string;
-      color?: string;
-      pro?: boolean;
-    };
   }
 }
 

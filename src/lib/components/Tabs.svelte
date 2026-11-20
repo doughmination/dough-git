@@ -3,10 +3,12 @@
 -->
 
 <script lang="ts">
+  import type { Component } from "svelte";
+
   type Tab = {
     id: string;
     label: string;
-    icon: string;
+    icon: Component;
     href: string;
   };
 
@@ -16,7 +18,7 @@
 <nav class="tabs">
   {#each items as tab (tab.id)}
     <a class="tab" class:active={tab.id === active} href={tab.href}>
-      <iconsax-icon name={tab.icon} type="bulk" size="18"></iconsax-icon>{tab.label}
+      <tab.icon class="icon" width="18" height="18" />{tab.label}
     </a>
   {/each}
 </nav>

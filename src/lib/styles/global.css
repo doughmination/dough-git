@@ -6,9 +6,9 @@
   box-sizing: border-box;
 }
 
-/* <iconsax-icon> renders its <svg> inside itself, so size that via `... svg` selectors */
-iconsax-icon {
-  display: inline-flex;
+/* Every icon is an inline <svg class="icon"> from unplugin-icons */
+svg.icon {
+  display: inline-block;
   flex-shrink: 0;
 }
 

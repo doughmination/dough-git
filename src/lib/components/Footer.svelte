@@ -3,6 +3,7 @@
 -->
 
 <script lang="ts">
+  import IcFavorite from "~icons/ic/outline-favorite";
   import "#lib/styles/footer.css";
   import { page } from "$app/state";
   import { mainSite } from "#lib";
@@ -21,7 +22,7 @@
 
     <span>
       part of <a href={mainSite}>doughmination.gay</a>
-      <iconsax-icon name="heart" type="bulk" size="16" class="beat"></iconsax-icon>
+      <IcFavorite class="icon beat" width="16" height="16" />
     </span>
 
     <span>Clove Twilight &copy; 2026</span>

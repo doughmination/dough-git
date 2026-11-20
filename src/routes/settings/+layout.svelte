@@ -3,6 +3,9 @@
 -->
 
 <script lang="ts">
+  import IcDelete from "~icons/ic/outline-delete";
+  import IcKey from "~icons/ic/outline-key";
+  import IcPerson from "~icons/ic/outline-person";
   import { page } from "$app/state";
   import Tabs from "#lib/components/Tabs.svelte";
 
@@ -29,19 +32,19 @@
       {
         id: "account",
         label: "account",
-        icon: "user",
+        icon: IcPerson,
         href: "/settings",
       },
       {
         id: "tokens",
         label: "tokens",
-        icon: "key",
+        icon: IcKey,
         href: "/settings/tokens",
       },
       {
         id: "deleted",
         label: "recently deleted",
-        icon: "trash",
+        icon: IcDelete,
         href: "/settings/deleted",
       },
     ]}

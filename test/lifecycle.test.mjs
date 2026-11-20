@@ -36,7 +36,7 @@ const {
   purgeExpired,
   purgeAllExpired,
   DELETED_META,
-} = await import("../container/git.ts");
+} = await import("../src/lib/server/git.ts");
 const { setCollaborator, listCollaborators, collaboratorLevel } = await import(
   "../src/lib/server/access.ts"
 );

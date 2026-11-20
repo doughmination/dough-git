@@ -2,15 +2,11 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
-import { building } from "$app/env";
-import { env } from "cloudflare:workers";
+import process from "node:process";
 
-// Vars and secrets from wrangler.jsonc, or .dev.vars locally. The build has no
-// bindings, and touching them there throws
-const vars: Record<string, string | undefined> = building ? {} : (env as unknown as Record<string, string>);
-
+// From .env, which both `deno task dev` and deploy/run hand to Deno
 function optional(name: string, fallback: string): string {
-  return vars[name] ?? fallback;
+  return process.env[name] ?? fallback;
 }
 
 export const config = {
@@ -28,6 +24,10 @@ export const config = {
   ),
 
   themeColor: optional("MINIGIT_THEME_COLOR", "#eb459e"),
+
+  reposRoot: optional("MINIGIT_REPOS_ROOT", "./data/repos"),
+  dbPath: optional("MINIGIT_DB_PATH", "./data/dough-git.db"),
+  publicMarker: optional("MINIGIT_PUBLIC_MARKER", "minigit-public"),
 
   autoCreate: optional("MINIGIT_AUTO_CREATE", "true") !== "false",
 

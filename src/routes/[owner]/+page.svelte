@@ -3,6 +3,8 @@
 -->
 
 <script lang="ts">
+  import IcAdd from "~icons/ic/outline-add";
+  import IcInsertDriveFile from "~icons/ic/outline-insert-drive-file";
   import { displayName } from "#lib";
   import Meta from "#lib/components/Meta.svelte";
   import OwnerHead from "#lib/components/OwnerHead.svelte";
@@ -38,9 +40,9 @@
   {:else if data.isOwn}
     <form method="post" action="/new?/create" class="panel row">
       <input type="hidden" name="name" value={data.profileRepo} />
-      <span class="field-label with-icon"><iconsax-icon name="document" type="bulk" size="16"></iconsax-icon>profile readme</span>
+      <span class="field-label with-icon"><IcInsertDriveFile class="icon" width="16" height="16" />profile readme</span>
       <span class="muted grow">Create <code>{data.profileRepo}</code> and its README.md shows up here.</span>
-      <button type="submit" class="primary"><iconsax-icon name="add" type="bulk" size="16"></iconsax-icon>create</button>
+      <button type="submit" class="primary"><IcAdd class="icon" width="16" height="16" />create</button>
     </form>
   {/if}
 

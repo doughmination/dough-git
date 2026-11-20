@@ -2,7 +2,7 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
-import { waitUntil } from "cloudflare:workers";
+import { background } from "./background.ts";
 import {
   refSlug,
   logRange,
@@ -186,7 +186,7 @@ async function deliver(owner: string, isPublic: boolean, embed: Embed | null): P
 
 // Outlives the response, so a slow Discord never holds a page or a push up
 function fireAndForget(owner: string, isPublic: boolean, embed: Embed | null): void {
-  waitUntil(
+  background(
     deliver(owner, isPublic, embed).catch((err) => {
       console.warn(`[notify] unexpected delivery error for ${owner}:`, err);
     }),
@@ -208,7 +208,7 @@ export function notifyPush(
   before: Map<string, string>,
   after: Map<string, string>,
 ): void {
-  waitUntil((async () => {
+  background((async () => {
     try {
       const changes = await diffRefs(repo, before, after);
       if (changes.length === 0) return;

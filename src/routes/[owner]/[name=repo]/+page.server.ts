@@ -2,7 +2,7 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
-import { waitUntil } from "cloudflare:workers";
+import { background } from "#lib/server/background.ts";
 import { redirect } from "@sveltejs/kit";
 import type { Actions, PageServerLoad } from "./$types";
 import { config } from "#lib/server/config.ts";
@@ -81,7 +81,7 @@ export const load: PageServerLoad = async (event) => {
     if (canPush && (await getSettings(ref.owner)).mirrorAuto) {
       const due = links.filter((l) => !l.isPrivate && needsCheck(statuses.get(l.kind)));
       if (due.length > 0) {
-        waitUntil(
+        background(
           checkAllMirrors(ref, due).catch((err) => {
             console.warn(`[mirror] background check failed for ${refSlug(ref)}:`, err);
           }),

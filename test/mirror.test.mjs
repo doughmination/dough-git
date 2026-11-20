@@ -27,7 +27,7 @@ const {
   mismatchReasons,
 } = await import("../src/lib/server/mirror.ts");
 const { classifyRemoteError, lsRemote, createRepo, refDir, localMirrorRefs } =
-  await import("../container/git.ts");
+  await import("../src/lib/server/git.ts");
 
 let failures = 0;
 function check(label, cond) {

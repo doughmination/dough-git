@@ -3,6 +3,9 @@
 -->
 
 <script lang="ts">
+  import IcCommit from "~icons/ic/outline-commit";
+  import IcPerson from "~icons/ic/outline-person";
+  import IcSchedule from "~icons/ic/outline-schedule";
   import { fmtDate } from "#lib";
   import Meta from "#lib/components/Meta.svelte";
   import RepoNav from "#lib/components/RepoNav.svelte";
@@ -23,11 +26,11 @@
   <RepoNav owner={data.owner} name={data.name} active="log" query={data.query} />
 
   <dl class="panel commit-meta">
-    <dt class="with-icon"><iconsax-icon name="record-circle" type="bulk" size="14"></iconsax-icon>commit</dt>
+    <dt class="with-icon"><IcCommit class="icon" width="14" height="14" />commit</dt>
     <dd class="mono">{commit.hash}</dd>
-    <dt class="with-icon"><iconsax-icon name="user" type="bulk" size="14"></iconsax-icon>author</dt>
+    <dt class="with-icon"><IcPerson class="icon" width="14" height="14" />author</dt>
     <dd>{commit.author} &lt;{commit.email}&gt;</dd>
-    <dt class="with-icon"><iconsax-icon name="clock" type="bulk" size="14"></iconsax-icon>date</dt>
+    <dt class="with-icon"><IcSchedule class="icon" width="14" height="14" />date</dt>
     <dd>{fmtDate(commit.time)}</dd>
   </dl>
 

@@ -3,6 +3,8 @@
 -->
 
 <script lang="ts">
+  import IcArrowForward from "~icons/ic/outline-arrow-forward";
+  import IcForkRight from "~icons/ic/outline-fork-right";
   type Refs = {
     branches: string[];
     tags: string[];
@@ -18,7 +20,7 @@
 {#if shown}
   <form method="get" class="rev-picker">
     <label class="field-label with-icon" for="rev-picker">
-      <iconsax-icon name="hierarchy" type="bulk" size="16"></iconsax-icon>revision
+      <IcForkRight class="icon" width="16" height="16" />revision
     </label>
     <!-- Picking a revision is the whole form; the button stays for no-JS -->
     <select id="rev-picker" name="h" value={rev} onchange={(event) => event.currentTarget.form?.submit()}>
@@ -40,7 +42,7 @@
         </optgroup>
       {/if}
     </select>
-    <button type="submit"><iconsax-icon name="arrow-right-01" type="bulk" size="16"></iconsax-icon>go</button>
+    <button type="submit"><IcArrowForward class="icon" width="16" height="16" />go</button>
   </form>
 {/if}
 

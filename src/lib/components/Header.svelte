@@ -3,6 +3,10 @@
 -->
 
 <script lang="ts">
+  import IcAddCircle from "~icons/ic/outline-add-circle";
+  import IcLogin from "~icons/ic/outline-login";
+  import IcLogout from "~icons/ic/outline-logout";
+  import IcSettings from "~icons/ic/outline-settings";
   import "#lib/styles/header.css";
   import { page } from "$app/state";
   import { displayName } from "#lib";
@@ -29,19 +33,19 @@
         <Avatar profile={user} size="sm" />{displayName(user)}
       </a>
       <a href="/new">
-        <iconsax-icon name="add-circle" type="bulk" size="24" class="nav-icon"></iconsax-icon>New
+        <IcAddCircle class="icon nav-icon" width="24" height="24" />New
       </a>
       <a href="/settings">
-        <iconsax-icon name="setting-2" type="bulk" size="24" class="nav-icon"></iconsax-icon>Settings
+        <IcSettings class="icon nav-icon" width="24" height="24" />Settings
       </a>
       <form method="post" action="/auth/logout" class="inline">
         <button type="submit" class="nav-button">
-          <iconsax-icon name="logout-01" type="bulk" size="24" class="nav-icon"></iconsax-icon>Sign out
+          <IcLogout class="icon nav-icon" width="24" height="24" />Sign out
         </button>
       </form>
     {:else}
       <a href="/auth/login">
-        <iconsax-icon name="login-01" type="bulk" size="24" class="nav-icon"></iconsax-icon>Sign in
+        <IcLogin class="icon nav-icon" width="24" height="24" />Sign in
       </a>
     {/if}
   </nav>

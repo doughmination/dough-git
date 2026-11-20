@@ -3,6 +3,7 @@
 -->
 
 <script lang="ts">
+  import IcCommit from "~icons/ic/outline-commit";
   import { fmtDate } from "#lib";
   import Meta from "#lib/components/Meta.svelte";
   import RepoNav from "#lib/components/RepoNav.svelte";
@@ -31,7 +32,7 @@
           <tr>
             <td class="mono">{fmtDate(commit.time)}</td>
             <td>
-              <iconsax-icon name="record-circle" type="bulk" size="14"></iconsax-icon>
+              <IcCommit class="icon" width="14" height="14" />
               <a href="/{data.owner}/{data.name}/commit/{commit.hash}{data.query}">{commit.subject}</a>
             </td>
             <td class="muted">{commit.author}</td>

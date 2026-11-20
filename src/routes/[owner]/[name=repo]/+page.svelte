@@ -3,6 +3,30 @@
 -->
 
 <script lang="ts">
+  import type { Component } from "svelte";
+  import IcArrowDownward from "~icons/ic/outline-arrow-downward";
+  import IcArrowUpward from "~icons/ic/outline-arrow-upward";
+  import IcCancel from "~icons/ic/outline-cancel";
+  import IcCheckCircle from "~icons/ic/outline-check-circle";
+  import IcDelete from "~icons/ic/outline-delete";
+  import IcDescription from "~icons/ic/outline-description";
+  import IcDownload from "~icons/ic/outline-download";
+  import IcHelpOutline from "~icons/ic/outline-help-outline";
+  import IcHome from "~icons/ic/outline-home";
+  import IcLock from "~icons/ic/outline-lock";
+  import IcLockOpen from "~icons/ic/outline-lock-open";
+  import IcOpenInNew from "~icons/ic/outline-open-in-new";
+  import IcPeople from "~icons/ic/outline-people";
+  import IcPerson from "~icons/ic/outline-person";
+  import IcPersonAdd from "~icons/ic/outline-person-add";
+  import IcPersonRemove from "~icons/ic/outline-person-remove";
+  import IcPublic from "~icons/ic/outline-public";
+  import IcRefresh from "~icons/ic/outline-refresh";
+  import IcSave from "~icons/ic/outline-save";
+  import IcSettings from "~icons/ic/outline-settings";
+  import IcStickyNote2 from "~icons/ic/outline-sticky-note-2";
+  import IcStorage from "~icons/ic/outline-storage";
+  import IcWarning from "~icons/ic/outline-warning";
   import { fmtDate } from "#lib";
   import Meta from "#lib/components/Meta.svelte";
   import RepoNav from "#lib/components/RepoNav.svelte";
@@ -11,6 +35,17 @@
   import ConfirmForm from "#lib/components/ConfirmForm.svelte";
 
   let { data } = $props();
+
+  // The glyph names src/lib/server/mirrorview.ts hands out
+  const MIRROR_GLYPHS: Record<string, Component> = {
+    "check-circle": IcCheckCircle,
+    "arrow-upward": IcArrowUpward,
+    "arrow-downward": IcArrowDownward,
+    warning: IcWarning,
+    lock: IcLock,
+    cancel: IcCancel,
+    "help-outline": IcHelpOutline,
+  };
 
   const title = $derived(`${data.owner}/${data.name}`);
 </script>
@@ -24,7 +59,7 @@
     <p class="muted meta">
       <Visibility isPublic={data.isPublic} />
       {#if data.canPush && !data.isOwner}
-        <span class="badge accent"><iconsax-icon name="export-arrow-01" type="bulk" size="12"></iconsax-icon> you can push</span>
+        <span class="badge accent"><IcOpenInNew class="icon" width="12" height="12" /> you can push</span>
       {/if}
     </p>
   </div>
@@ -34,7 +69,7 @@
   {#if data.canPush}
     <form method="post" action="?/description" class="panel row">
       <label class="field-label with-icon" for="repo-description">
-        <iconsax-icon name="note-2" type="bulk" size="16"></iconsax-icon>description
+        <IcStickyNote2 class="icon" width="16" height="16" />description
       </label>
       <input
         id="repo-description"
@@ -44,7 +79,7 @@
         value={data.rawDescription}
         placeholder="what this repository is for"
       />
-      <button type="submit"><iconsax-icon name="save-2" type="bulk" size="16"></iconsax-icon>save</button>
+      <button type="submit"><IcSave class="icon" width="16" height="16" />save</button>
     </form>
   {:else if data.rawDescription}
     <p class="muted">{data.rawDescription}</p>
@@ -53,7 +88,7 @@
   <RevPicker refs={data.refs} rev={data.rev} />
 
   <section class="panel">
-    <span class="field-label with-icon"><iconsax-icon name="import-arrow-01" type="bulk" size="16"></iconsax-icon>clone</span>
+    <span class="field-label with-icon"><IcDownload class="icon" width="16" height="16" />clone</span>
     <code>git clone {data.cloneUrl}</code>
   </section>
 
@@ -72,17 +107,18 @@ git push --mirror mirror</code></pre>
   {/if}
 
   {#if data.mirrors.length > 0 || data.isOwner}
-    <h2 class="section-title"><iconsax-icon name="driver" type="bulk" size="20"></iconsax-icon>External mirrors</h2>
+    <h2 class="section-title"><IcStorage class="icon" width="20" height="20" />External mirrors</h2>
 
     {#if data.mirrors.length > 0}
       <section class="panel mirrors">
         {#each data.mirrors as mirror (mirror.kind)}
+          {@const Glyph = MIRROR_GLYPHS[mirror.glyph] ?? IcHelpOutline}
           <div class="mirror-row">
             <a class="with-icon" href={mirror.url} rel="nofollow noopener noreferrer">
-              <iconsax-icon name="global" type="bulk" size="16"></iconsax-icon>{mirror.slug}
+              <IcPublic class="icon" width="16" height="16" />{mirror.slug}
             </a>
             <span class="{mirror.cls} with-icon">
-              <iconsax-icon name={mirror.glyph} type="bulk" size="16"></iconsax-icon>{mirror.label}
+              <Glyph class="icon" width="16" height="16" />{mirror.label}
             </span>
             <span class="mono">{mirror.sha}</span>
             <span class="muted">{mirror.detail}</span>
@@ -94,7 +130,7 @@ git push --mirror mirror</code></pre>
 
         {#if data.localSha}
           <div class="mirror-row">
-            <span class="with-icon"><iconsax-icon name="home-2" type="bulk" size="16"></iconsax-icon>local</span>
+            <span class="with-icon"><IcHome class="icon" width="16" height="16" />local</span>
             <span class="empty">this repository</span>
             <span class="mono">{data.localSha.slice(0, 7)}</span>
             <span></span>
@@ -103,7 +139,7 @@ git push --mirror mirror</code></pre>
 
         {#if data.canCheckMirrors}
           <form method="post" action="?/check">
-            <button type="submit"><iconsax-icon name="refresh-arrow-01" type="bulk" size="16"></iconsax-icon>check now</button>
+            <button type="submit"><IcRefresh class="icon" width="16" height="16" />check now</button>
           </form>
         {/if}
       </section>
@@ -116,7 +152,7 @@ git push --mirror mirror</code></pre>
         {#each data.mirrorFields as mirror (mirror.kind)}
           <div class="row">
             <label class="field-label with-icon" for="mirror-{mirror.kind}">
-              <iconsax-icon name="global" type="bulk" size="16"></iconsax-icon>{mirror.kind}
+              <IcPublic class="icon" width="16" height="16" />{mirror.kind}
             </label>
             <input
               id="mirror-{mirror.kind}"
@@ -139,47 +175,51 @@ git push --mirror mirror</code></pre>
           Clear a field to remove it.
         </p>
         <div>
-          <button type="submit"><iconsax-icon name="save-2" type="bulk" size="16"></iconsax-icon>save mirrors</button>
+          <button type="submit"><IcSave class="icon" width="16" height="16" />save mirrors</button>
         </div>
       </form>
     {/if}
   {/if}
 
   {#if data.readme}
-    <h2 class="section-title"><iconsax-icon name="document-text" type="bulk" size="20"></iconsax-icon>{data.readme.path}</h2>
+    <h2 class="section-title"><IcDescription class="icon" width="20" height="20" />{data.readme.path}</h2>
     <article class="readme">{@html data.readme.html}</article>
   {:else if !data.empty}
-    <h2 class="section-title"><iconsax-icon name="document-text" type="bulk" size="20"></iconsax-icon>Readme</h2>
+    <h2 class="section-title"><IcDescription class="icon" width="20" height="20" />Readme</h2>
     <p class="empty">No ReadMe was found, commit one to add a summary</p>
   {/if}
 
   {#if data.isOwner && data.collaborators}
-    <h2 class="section-title"><iconsax-icon name="setting-2" type="bulk" size="20"></iconsax-icon>Manage</h2>
+    <h2 class="section-title"><IcSettings class="icon" width="20" height="20" />Manage</h2>
     <div class="buttons">
       <form method="post" action="?/visibility">
         <input type="hidden" name="public" value={data.isPublic ? "" : "on"} />
         <button type="submit">
-          <iconsax-icon name={data.isPublic ? "lock" : "unlock"} type="bulk" size="16"></iconsax-icon>
+          {#if data.isPublic}
+            <IcLock class="icon" width="16" height="16" />
+          {:else}
+            <IcLockOpen class="icon" width="16" height="16" />
+          {/if}
           make {data.isPublic ? "private" : "public"}
         </button>
       </form>
       <ConfirmForm action="?/delete" prompt="Delete {title}? It moves to Recently Deleted.">
-        <button type="submit" class="danger"><iconsax-icon name="trash" type="bulk" size="16"></iconsax-icon>delete repository</button>
+        <button type="submit" class="danger"><IcDelete class="icon" width="16" height="16" />delete repository</button>
       </ConfirmForm>
     </div>
 
-    <h2 class="section-title"><iconsax-icon name="people" type="bulk" size="20"></iconsax-icon>Collaborators</h2>
+    <h2 class="section-title"><IcPeople class="icon" width="20" height="20" />Collaborators</h2>
     <p class="muted">
       People here can see this repository even while it is private. <code>write</code> also lets them push to it.
     </p>
     <form method="post" action="?/collaborator" class="panel row">
-      <label class="field-label with-icon" for="collab-slug"><iconsax-icon name="user" type="bulk" size="16"></iconsax-icon>username</label>
+      <label class="field-label with-icon" for="collab-slug"><IcPerson class="icon" width="16" height="16" />username</label>
       <input id="collab-slug" type="text" name="slug" placeholder="their handle" pattern="[A-Za-z0-9._\-]+" required />
       <select name="level" aria-label="access level">
         <option value="read">read</option>
         <option value="write">write</option>
       </select>
-      <button type="submit"><iconsax-icon name="user-add" type="bulk" size="16"></iconsax-icon>add</button>
+      <button type="submit"><IcPersonAdd class="icon" width="16" height="16" />add</button>
     </form>
 
     <div class="table-wrap">
@@ -195,13 +235,13 @@ git push --mirror mirror</code></pre>
         <tbody>
           {#each data.collaborators as person (person.slug)}
             <tr>
-              <td><iconsax-icon name="user" type="bulk" size="14"></iconsax-icon> <a href="/{person.slug}">{person.slug}</a></td>
+              <td><IcPerson class="icon" width="14" height="14" /> <a href="/{person.slug}">{person.slug}</a></td>
               <td class="mono">{person.level}</td>
               <td class="mono">{fmtDate(person.added_at)}</td>
               <td>
                 <form method="post" action="?/uncollaborate">
                   <input type="hidden" name="slug" value={person.slug} />
-                  <button type="submit" class="small"><iconsax-icon name="user-minus" type="bulk" size="14"></iconsax-icon>remove</button>
+                  <button type="submit" class="small"><IcPersonRemove class="icon" width="14" height="14" />remove</button>
                 </form>
               </td>
             </tr>

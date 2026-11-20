@@ -372,21 +372,30 @@ const QUOTE = /^\s{0,3}>/;
 
 const ALERT = /^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION|FROZEN|ASIDE)\]\s*$/i;
 
-// iconsax names; <iconsax-icon> is a web component the browser fills in
+// Material outline icon bodies (24×24), the same set as the rest of the UI. Inlined
+// because this renders to an HTML string, outside the Svelte components
 const ALERT_ICON: Record<string, string> = {
-  note: "info-circle",
-  tip: "lamp-on",
-  important: "flag",
-  warning: "danger",
-  caution: "warning-2",
-  frozen: "cloud-snow",
-  aside: "wind",
+  // ic:outline-info
+  note: '<path fill="currentColor" d="M11 7h2v2h-2zm0 4h2v6h-2zm1-9C6.48 2 2 6.48 2 12s4.48 10 10 10s10-4.48 10-10S17.52 2 12 2m0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8s8 3.59 8 8s-3.59 8-8 8"/>',
+  // ic:outline-lightbulb
+  tip: '<path fill="currentColor" d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74c0-3.86-3.14-7-7-7m2.85 11.1l-.85.6V16h-4v-2.3l-.85-.6A5 5 0 0 1 7 9c0-2.76 2.24-5 5-5s5 2.24 5 5c0 1.63-.8 3.16-2.15 4.1"/>',
+  // ic:outline-flag
+  important: '<path fill="currentColor" d="m12.36 6l.4 2H18v6h-3.36l-.4-2H7V6zM14 4H5v17h2v-7h5.6l.4 2h7V6h-5.6z"/>',
+  // ic:outline-warning
+  warning: '<path fill="currentColor" d="M1 21h22L12 2zm12-3h-2v-2h2zm0-4h-2v-4h2z"/>',
+  // ic:outline-report
+  caution: '<path fill="currentColor" d="M15.73 3H8.27L3 8.27v7.46L8.27 21h7.46L21 15.73V8.27zM19 14.9L14.9 19H9.1L5 14.9V9.1L9.1 5h5.8L19 9.1z"/><circle cx="12" cy="16" r="1" fill="currentColor"/><path fill="currentColor" d="M11 7h2v7h-2z"/>',
+  // ic:outline-ac-unit
+  frozen: '<path fill="currentColor" d="M22 11h-4.17l3.24-3.24l-1.41-1.42L15 11h-2V9l4.66-4.66l-1.42-1.41L13 6.17V2h-2v4.17L7.76 2.93L6.34 4.34L11 9v2H9L4.34 6.34L2.93 7.76L6.17 11H2v2h4.17l-3.24 3.24l1.41 1.42L9 13h2v2l-4.66 4.66l1.42 1.41L11 17.83V22h2v-4.17l3.24 3.24l1.42-1.41L13 15v-2h2l4.66 4.66l1.41-1.42L17.83 13H22z"/>',
+  // ic:outline-air
+  aside: '<path fill="currentColor" d="M14.5 17c0 1.65-1.35 3-3 3s-3-1.35-3-3h2c0 .55.45 1 1 1s1-.45 1-1s-.45-1-1-1H2v-2h9.5c1.65 0 3 1.35 3 3M19 6.5C19 4.57 17.43 3 15.5 3S12 4.57 12 6.5h2c0-.83.67-1.5 1.5-1.5s1.5.67 1.5 1.5S16.33 8 15.5 8H2v2h13.5c1.93 0 3.5-1.57 3.5-3.5m-.5 4.5H2v2h16.5c.83 0 1.5.67 1.5 1.5s-.67 1.5-1.5 1.5v2c1.93 0 3.5-1.57 3.5-3.5S20.43 11 18.5 11"/>',
 };
 
 function alertBlock(kind: string, body: string[], depth: number): string {
   const key = kind.toLowerCase();
   const label = key.charAt(0).toUpperCase() + key.slice(1);
-  const glyph = `<iconsax-icon name="${ALERT_ICON[key] ?? "info-circle"}" type="bulk" size="16" class="icon"></iconsax-icon>`;
+  const icon = ALERT_ICON[key] ?? ALERT_ICON.note;
+  const glyph = `<svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">${icon}</svg>`;
   const inner = blocks(body, depth + 1);
   const title = `<p class="md-alert-title">${glyph}${label}</p>`;
   return `<div class="md-alert md-alert-${key}">\n${title}\n${inner}\n</div>`;
