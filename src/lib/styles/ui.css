@@ -36,6 +36,11 @@ samp {
   padding: 2rem 1.5rem 3rem;
 }
 
+/* .page and .panel space their children with gap; a paragraph's own margin would double it */
+:where(.page, .panel) > p {
+  margin: 0;
+}
+
 .page.narrow {
   max-width: 34rem;
 }
@@ -267,7 +272,10 @@ legend {
 }
 
 .badge {
-  display: inline-block;
+  display: inline-flex;
+  gap: 0.3em;
+  align-items: center;
+  vertical-align: middle;
   padding: 0.05rem 0.55rem;
   border: 1px solid var(--line);
   border-radius: 999px;
