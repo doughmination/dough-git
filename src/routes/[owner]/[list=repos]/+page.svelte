@@ -16,6 +16,7 @@
 <Meta
   title="{name} repositories"
   description="Repositories owned by {name} (@{data.owner}) on {data.site.title}."
+  image={data.profile?.picture}
   noindex={!data.repos.some((r) => r.isPublic)}
 />
 

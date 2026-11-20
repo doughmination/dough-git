@@ -59,6 +59,11 @@
     align-items: center;
   }
 
+  /* A flex box, not an inline one, so the button isn't lifted onto the text baseline */
+  nav form {
+    display: flex;
+  }
+
   /* A form button that reads as one of the header's links */
   .nav-button {
     padding: 0;

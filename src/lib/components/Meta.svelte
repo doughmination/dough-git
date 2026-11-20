@@ -10,15 +10,20 @@
     title,
     description = "",
     noindex = false,
+    image = null,
   }: {
     title: string;
     description?: string;
     noindex?: boolean;
+    image?: string | null;
   } = $props();
 
   const site = $derived(page.data.site);
   const text = $derived(metaText(description || site.description));
   const url = $derived(site.baseUrl + page.url.pathname);
+
+  // A profile picture when the page has one, otherwise the site icon
+  const imageUrl = $derived(image || site.favicon);
 
   // Theme colour as a number, e.g. "#eb459e" -> 0xeb459e
   const accentColour = $derived(parseInt(site.themeColor.replace("#", ""), 16));
@@ -43,7 +48,7 @@
           ],
           accessory: {
             type: 11,
-            media: { url: site.favicon },
+            media: { url: imageUrl },
           },
         },
         { type: 14 },
@@ -89,7 +94,7 @@
   <meta property="og:title" content={title} />
   <meta property="og:description" content={text} />
   <meta property="og:url" content={url} />
-  <meta property="og:image" content={site.favicon} />
+  <meta property="og:image" content={imageUrl} />
   <meta name="twitter:card" content="summary" />
 
   <!-- Built from page props, '<' escaped -->

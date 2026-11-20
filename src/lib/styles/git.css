@@ -62,6 +62,11 @@
   align-items: center;
 }
 
+/* .panel stacks its children; this outranks it whatever order the sheets load in */
+.panel.row {
+  flex-direction: row;
+}
+
 .row > input:not([type="checkbox"]) {
   flex: 1 1 14rem;
   width: auto;

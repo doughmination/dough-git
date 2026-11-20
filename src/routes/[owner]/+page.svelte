@@ -22,6 +22,7 @@
 <Meta
   title={name}
   description={data.readme?.summary || `${name} (@${data.owner}) on ${data.site.title}.`}
+  image={data.profile?.picture}
   noindex={!data.repos.some((r) => r.isPublic) && !data.readme}
 />
 
