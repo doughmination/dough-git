@@ -25,6 +25,9 @@ export const config = {
 
   themeColor: optional("MINIGIT_THEME_COLOR", "#eb459e"),
 
+  // Namespace slug of the site owner, who manages the moderator list
+  siteOwner: optional("MINIGIT_SITE_OWNER", "clove"),
+
   reposRoot: optional("MINIGIT_REPOS_ROOT", "./data/repos"),
   dbPath: optional("MINIGIT_DB_PATH", "./data/dough-git.db"),
   publicMarker: optional("MINIGIT_PUBLIC_MARKER", "minigit-public"),

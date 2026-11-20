@@ -8,6 +8,7 @@ import type { Actions, PageServerLoad } from "./$types";
 import { config } from "#lib/server/config.ts";
 import { sessionSlug } from "#lib/server/auth.ts";
 import { findUserBySlug } from "#lib/server/users.ts";
+import { siteRole } from "#lib/server/roles.ts";
 import { getSettings } from "#lib/server/settings.ts";
 import { clearRepoMetadata } from "#lib/server/repometa.ts";
 import { notifyRepoDeleted } from "#lib/server/notify.ts";
@@ -114,7 +115,14 @@ export const load: PageServerLoad = async (event) => {
       : null,
     canPush,
     isOwner,
-    collaborators: isOwner ? await listCollaborators(ref) : null,
+    collaborators: isOwner
+      ? await Promise.all(
+          (await listCollaborators(ref)).map(async (person) => ({
+            ...person,
+            role: await siteRole(person.slug),
+          })),
+        )
+      : null,
     mirrors: links.map((link) => describeMirror(link, statuses.get(link.kind) ?? null, nowSec)),
     canCheckMirrors: canPush && links.some((l) => !l.isPrivate),
     mirrorFields: MIRROR_KINDS.map((kind) => {

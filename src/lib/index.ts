@@ -24,6 +24,8 @@ export function ago(seconds: number): string {
   return `${Math.round(seconds / 86400)}d`;
 }
 
+export type SiteRole = "owner" | "mod";
+
 export interface Profile {
   name: string | null;
   username: string | null;

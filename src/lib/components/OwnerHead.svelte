@@ -5,8 +5,9 @@
 <script lang="ts">
   import IcForkRight from "~icons/ic/outline-fork-right";
   import IcPerson from "~icons/ic/outline-person";
-  import { displayName, fmtDate } from "#lib";
+  import { displayName, fmtDate, type SiteRole } from "#lib";
   import Avatar from "#lib/components/Avatar.svelte";
+  import RoleBadge from "#lib/components/RoleBadge.svelte";
   import Tabs from "#lib/components/Tabs.svelte";
 
   type Profile = {
@@ -15,6 +16,7 @@
     username: string | null;
     picture: string | null;
     createdAt: number;
+    role: SiteRole | null;
   };
 
   let {
@@ -40,7 +42,7 @@
 <section class="owner-head">
   <Avatar profile={shown} size="lg" />
   <div>
-    <h1>{displayName(shown)}</h1>
+    <h1>{displayName(shown)} <RoleBadge role={profile?.role} /></h1>
     {#if profile}
       <p class="muted">
         @{profile.slug}{#if handle}&nbsp;&middot; {handle}{/if} &middot; joined {fmtDate(profile.createdAt).slice(0, 10)}

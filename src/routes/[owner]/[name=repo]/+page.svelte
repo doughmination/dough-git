@@ -33,6 +33,7 @@
   import RevPicker from "#lib/components/RevPicker.svelte";
   import Visibility from "#lib/components/Visibility.svelte";
   import ConfirmForm from "#lib/components/ConfirmForm.svelte";
+  import RoleBadge from "#lib/components/RoleBadge.svelte";
 
   let { data } = $props();
 
@@ -235,7 +236,7 @@ git push --mirror mirror</code></pre>
         <tbody>
           {#each data.collaborators as person (person.slug)}
             <tr>
-              <td><IcPerson class="icon" width="14" height="14" /> <a href="/{person.slug}">{person.slug}</a></td>
+              <td><IcPerson class="icon" width="14" height="14" /> <a href="/{person.slug}">{person.slug}</a> <RoleBadge role={person.role} /></td>
               <td class="mono">{person.level}</td>
               <td class="mono">{fmtDate(person.added_at)}</td>
               <td>

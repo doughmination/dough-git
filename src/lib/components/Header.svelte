@@ -11,6 +11,7 @@
   import { page } from "$app/state";
   import { displayName } from "#lib";
   import Avatar from "#lib/components/Avatar.svelte";
+  import RoleBadge from "#lib/components/RoleBadge.svelte";
 
   const site = $derived(page.data.site);
   const user = $derived(page.data.user);
@@ -31,6 +32,7 @@
     {#if user}
       <a href="/{user.slug}">
         <Avatar profile={user} size="sm" />{displayName(user)}
+        <RoleBadge role={user.role} />
       </a>
       <a href="/new">
         <IcAddCircle class="icon nav-icon" width="24" height="24" />New

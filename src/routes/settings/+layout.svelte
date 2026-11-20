@@ -6,17 +6,20 @@
   import IcDelete from "~icons/ic/outline-delete";
   import IcKey from "~icons/ic/outline-key";
   import IcPerson from "~icons/ic/outline-person";
+  import IcShield from "~icons/ic/outline-shield";
   import { page } from "$app/state";
   import Tabs from "#lib/components/Tabs.svelte";
 
-  let { children } = $props();
+  let { data, children } = $props();
 
   const active = $derived(
     page.url.pathname.startsWith("/settings/tokens")
       ? "tokens"
       : page.url.pathname.startsWith("/settings/deleted")
         ? "deleted"
-        : "account",
+        : page.url.pathname.startsWith("/settings/moderation")
+          ? "moderation"
+          : "account",
   );
 </script>
 
@@ -47,6 +50,16 @@
         icon: IcDelete,
         href: "/settings/deleted",
       },
+      ...(data.isSiteOwner
+        ? [
+            {
+              id: "moderation",
+              label: "moderation",
+              icon: IcShield,
+              href: "/settings/moderation",
+            },
+          ]
+        : []),
     ]}
   />
 

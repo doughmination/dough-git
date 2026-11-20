@@ -4,6 +4,7 @@
 
 import { canRead } from "./access.ts";
 import { findUserBySlug } from "./users.ts";
+import { siteRole } from "./roles.ts";
 import { renderMarkdown, plainSummary } from "./markdown.ts";
 import {
   PROFILE_REPO,
@@ -66,6 +67,7 @@ export async function ownerPage(owner: string, viewer: string | null, withReadme
           username: profile.username,
           picture: profile.picture,
           createdAt: profile.created_at,
+          role: await siteRole(profile.slug),
         }
       : null,
     repos,
