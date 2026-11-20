@@ -10,12 +10,12 @@ function optional(name: string, fallback: string): string {
 }
 
 export const config = {
-  baseUrl: optional("MINIGIT_BASE_URL", "http://localhost:5173"),
-  title: optional("MINIGIT_TITLE", "dough-git"),
+  baseUrl: optional("MINIGIT_BASE_URL", "https://git.doughmination.gay"),
+  title: optional("MINIGIT_TITLE", "Dough Git"),
 
   favicon: optional(
     "MINIGIT_FAVICON",
-    "/favicon.png",
+    "https://git.doughmination.gay/favicon.png",
   ),
 
   description: optional(

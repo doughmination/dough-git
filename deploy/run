@@ -12,8 +12,8 @@ export NODE_ENV=production
 
 # Public URL behind the proxy: SvelteKit needs it for form actions (CSRF check),
 # the SSO redirect URI and the clone URLs shown in the UI
-export ORIGIN=https://backup.doughmination.gay
-export MINIGIT_BASE_URL=https://backup.doughmination.gay
+export ORIGIN=https://git.doughmination.gay
+export MINIGIT_BASE_URL=https://git.doughmination.gay
 
 # Single sign-on. The client secret is in .env with the other secrets
 export OIDC_ISSUER=https://auth.doughmination.gay

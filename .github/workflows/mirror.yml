@@ -15,7 +15,7 @@ jobs:
       cancel-in-progress: false
 
     env:
-      MIRROR_HOST: backup.doughmination.gay
+      MIRROR_HOST: git.doughmination.gay
       MIRROR_USERNAME: ${{ secrets.MIRROR_USERNAME }}
       MIRROR_REPO: ${{ secrets.MIRROR_REPO }}
       MIRROR_TOKEN: ${{ secrets.MIRROR_TOKEN }}
