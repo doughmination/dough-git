@@ -9,9 +9,12 @@
   import IcPerson from "~icons/ic/outline-person";
   import IcSave from "~icons/ic/outline-save";
   import IcTune from "~icons/ic/outline-tune";
+  import IcUpload from "~icons/ic/outline-upload";
+  import { page } from "$app/state";
   import { fmtDate } from "#lib";
   import Meta from "#lib/components/Meta.svelte";
   import ConfirmForm from "#lib/components/ConfirmForm.svelte";
+  import Avatar from "#lib/components/Avatar.svelte";
 
   let { data } = $props();
 </script>
@@ -88,9 +91,32 @@
 </form>
 
 <h2 class="section-title"><IcPerson class="icon" width="20" height="20" />Account</h2>
+<section class="panel">
+  <div class="row">
+    <Avatar profile={page.data.user} size="lg" />
+    <p class="muted grow">
+      {#if data.hasUpload}
+        Using your uploaded avatar. Remove it to go back to your SSO picture.
+      {:else}
+        Using your SSO picture. Upload a PNG, JPEG, GIF or WebP, up to {data.avatarMaxMb} MB, to replace it.
+      {/if}
+    </p>
+  </div>
+
+  <form method="post" action="?/avatar" enctype="multipart/form-data" class="row">
+    <input type="file" name="avatar" accept="image/png,image/jpeg,image/gif,image/webp" aria-label="avatar image" required />
+    <button type="submit" class="primary"><IcUpload class="icon" width="16" height="16" />upload</button>
+  </form>
+
+  {#if data.hasUpload}
+    <ConfirmForm action="?/removeAvatar" prompt="Remove your uploaded avatar?">
+      <button type="submit" class="danger"><IcDelete class="icon" width="16" height="16" />remove avatar</button>
+    </ConfirmForm>
+  {/if}
+</section>
+
 <p class="muted">
-  Your name and avatar come from your SSO account and refresh automatically, so there is nothing to edit
-  here{#if data.accountUrl}
-    — change them on <a href={data.accountUrl}>your SSO account page</a>{/if}. Your owner namespace is
+  Your name comes from your SSO account and refreshes automatically{#if data.accountUrl}
+    — change it on <a href={data.accountUrl}>your SSO account page</a>{/if}. Your owner namespace is
   <code>{data.slug}</code> and never changes.
 </p>

@@ -23,6 +23,7 @@
 <Meta
   title="{data.owner}/{data.name} tree"
   description="Files in {data.owner}/{data.name}{data.path ? ` at ${data.path}` : ''}."
+  image={data.ownerPicture}
 />
 
 <div class="page">

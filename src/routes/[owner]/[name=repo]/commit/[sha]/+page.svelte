@@ -15,7 +15,11 @@
   const commit = $derived(data.commit);
 </script>
 
-<Meta title={commit.subject} description="{commit.subject} — {commit.author} in {data.owner}/{data.name}." />
+<Meta
+  title={commit.subject}
+  description="{commit.subject} — {commit.author} in {data.owner}/{data.name}."
+  image={data.ownerPicture}
+/>
 
 <div class="page">
   <div class="page-head">

@@ -14,7 +14,11 @@
   const title = $derived(`${data.owner}/${data.name}`);
 </script>
 
-<Meta title="{title} log" description="Commit history for {title} on {data.rev}." />
+<Meta
+  title="{title} log"
+  description="Commit history for {title} on {data.rev}."
+  image={data.ownerPicture}
+/>
 
 <div class="page">
   <div class="page-head">

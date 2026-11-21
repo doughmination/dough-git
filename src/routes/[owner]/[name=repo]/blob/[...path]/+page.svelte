@@ -14,7 +14,11 @@
   const size = $derived(fmtBytes(data.bytes));
 </script>
 
-<Meta title={data.path} description="{data.path} in {data.owner}/{data.name}." />
+<Meta
+  title={data.path}
+  description="{data.path} in {data.owner}/{data.name}."
+  image={data.ownerPicture}
+/>
 
 <div class="page">
   <div class="page-head">

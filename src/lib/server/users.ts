@@ -14,6 +14,7 @@ export interface UserRow {
   issuer: string | null;
   created_at: number;
   last_login: number;
+  avatar_at: number | null;
 }
 
 export function findUserBySlug(slug: string): Promise<UserRow | null> {
@@ -105,20 +106,28 @@ export async function rememberUser(input: RememberInput): Promise<UserRow> {
   if (existing) {
     await db()
       .prepare(
-        `UPDATE users SET username = ?, name = ?, picture = ?, last_login = ?,
+        `UPDATE users SET username = ?, name = ?, last_login = ?,
+           picture = CASE WHEN avatar_at IS NULL THEN ? ELSE picture END,
            issuer = COALESCE(?, issuer)
          WHERE sub = ?`,
       )
       .bind(
         input.username,
         input.name,
-        input.picture,
         ts,
+        input.picture,
         issuer,
         input.sub,
       )
       .run();
-    return { ...existing, ...profile, issuer: issuer ?? existing.issuer, last_login: ts };
+    return {
+      ...existing,
+      ...profile,
+      // An uploaded avatar outranks the SSO picture
+      picture: existing.avatar_at ? existing.picture : input.picture,
+      issuer: issuer ?? existing.issuer,
+      last_login: ts,
+    };
   }
 
   const slug = await uniqueSlug(
@@ -141,7 +150,7 @@ export async function rememberUser(input: RememberInput): Promise<UserRow> {
       ts,
     )
     .run();
-  return { ...profile, slug, issuer, created_at: ts, last_login: ts };
+  return { ...profile, slug, issuer, created_at: ts, last_login: ts, avatar_at: null };
 }
 
 export async function slugForSub(sub: string | null): Promise<string | null> {

@@ -30,6 +30,7 @@ export const config = {
 
   reposRoot: optional("MINIGIT_REPOS_ROOT", "./data/repos"),
   dbPath: optional("MINIGIT_DB_PATH", "./data/dough-git.db"),
+  avatarsDir: optional("MINIGIT_AVATARS_DIR", "./data/avatars"),
   publicMarker: optional("MINIGIT_PUBLIC_MARKER", "minigit-public"),
 
   autoCreate: optional("MINIGIT_AUTO_CREATE", "true") !== "false",

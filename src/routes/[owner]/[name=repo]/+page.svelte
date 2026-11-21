@@ -51,7 +51,12 @@
   const title = $derived(`${data.owner}/${data.name}`);
 </script>
 
-<Meta {title} description={data.metaDescription} noindex={!data.isPublic} />
+<Meta
+  {title}
+  description={data.metaDescription}
+  noindex={!data.isPublic}
+  image={data.ownerPicture}
+/>
 
 <div class="page">
   <div class="page-head">

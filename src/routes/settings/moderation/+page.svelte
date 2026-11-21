@@ -3,6 +3,7 @@
 -->
 
 <script lang="ts">
+  import IcHistory from "~icons/ic/outline-history";
   import IcPerson from "~icons/ic/outline-person";
   import IcPersonAdd from "~icons/ic/outline-person-add";
   import IcPersonRemove from "~icons/ic/outline-person-remove";
@@ -51,6 +52,30 @@
         </tr>
       {:else}
         <tr><td colspan="3" class="empty">no moderators yet</td></tr>
+      {/each}
+    </tbody>
+  </table>
+</div>
+
+<h2 class="section-title"><IcHistory class="icon" width="20" height="20" />Log</h2>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>when</th>
+        <th>who</th>
+        <th>what</th>
+      </tr>
+    </thead>
+    <tbody>
+      {#each data.log as entry (entry.id)}
+        <tr>
+          <td class="mono">{fmtDate(entry.at)}</td>
+          <td><a href="/{entry.actor}">{entry.actor}</a></td>
+          <td>{entry.action} <a href="/{entry.target}">{entry.target}</a></td>
+        </tr>
+      {:else}
+        <tr><td colspan="3" class="empty">nothing logged yet</td></tr>
       {/each}
     </tbody>
   </table>
