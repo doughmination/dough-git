@@ -2,12 +2,16 @@
  * LICENCED DASL-1.0 (c) Clove Twilight
  */
 
-// Uploaded avatars, one file per user named by slug. The type is read from the bytes, never trusted from the upload
+// Uploaded images: user avatars, one file per slug, and repository images, kept inside the repository's folder
+// so trash, restore and purge carry them along. The type is read from the bytes, never trusted from the upload
 
-import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
+import { mkdir, readFile, stat, unlink, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { config } from "./config.ts";
 import { db, now } from "./db.ts";
+import { refDir, type RepoRef } from "./git.ts";
+
+const REPO_IMAGE = "dough-image";
 
 export const AVATAR_MAX_BYTES = 4 * 1024 * 1024;
 
@@ -30,13 +34,32 @@ export function sniffImage(bytes: Uint8Array): AvatarType | null {
   return null;
 }
 
+function isAllowedImage(bytes: Uint8Array): boolean {
+  return bytes.length > 0 && bytes.length <= AVATAR_MAX_BYTES && sniffImage(bytes) !== null;
+}
+
+async function readImage(path: string): Promise<{ bytes: Uint8Array<ArrayBuffer>; type: AvatarType } | null> {
+  const file = await readFile(path).catch(() => null);
+  if (!file) return null;
+
+  // A copy on a plain ArrayBuffer, which is what Response accepts as a body
+  const bytes = new Uint8Array(file);
+  const type = sniffImage(bytes);
+  return type
+    ? {
+        bytes,
+        type,
+      }
+    : null;
+}
+
 function avatarPath(slug: string): string {
   return join(config.avatarsDir, slug);
 }
 
 /** Stores the avatar and points users.picture at it. False when the bytes aren't an allowed image */
 export async function saveAvatar(slug: string, bytes: Uint8Array): Promise<boolean> {
-  if (bytes.length === 0 || bytes.length > AVATAR_MAX_BYTES || !sniffImage(bytes)) return false;
+  if (!isAllowedImage(bytes)) return false;
 
   await mkdir(config.avatarsDir, { recursive: true });
   await writeFile(avatarPath(slug), bytes);
@@ -60,18 +83,31 @@ export async function removeAvatar(slug: string): Promise<void> {
     .run();
 }
 
-export async function readAvatar(slug: string): Promise<{ bytes: Uint8Array<ArrayBuffer>; type: AvatarType } | null> {
-  const file = await readFile(avatarPath(slug)).catch(() => null);
-  if (!file) return null;
+export function readAvatar(slug: string) {
+  return readImage(avatarPath(slug));
+}
 
-  // A copy on a plain ArrayBuffer, which is what Response accepts as a body
-  const bytes = new Uint8Array(file);
+function repoImagePath(ref: RepoRef): string {
+  return join(refDir(ref), REPO_IMAGE);
+}
 
-  const type = sniffImage(bytes);
-  return type
-    ? {
-        bytes,
-        type,
-      }
-    : null;
+/** False when the bytes aren't an allowed image */
+export async function saveRepoImage(ref: RepoRef, bytes: Uint8Array): Promise<boolean> {
+  if (!isAllowedImage(bytes)) return false;
+  await writeFile(repoImagePath(ref), bytes);
+  return true;
+}
+
+export async function removeRepoImage(ref: RepoRef): Promise<void> {
+  await unlink(repoImagePath(ref)).catch(() => {});
+}
+
+export function readRepoImage(ref: RepoRef) {
+  return readImage(repoImagePath(ref));
+}
+
+/** The image's modified time in seconds, used as a cache-busting ?v=; null when there is no image */
+export async function repoImageVersion(ref: RepoRef): Promise<number | null> {
+  const info = await stat(repoImagePath(ref)).catch(() => null);
+  return info ? Math.floor(info.mtimeMs / 1000) : null;
 }

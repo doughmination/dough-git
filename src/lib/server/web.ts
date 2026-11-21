@@ -7,6 +7,7 @@
 import { error, redirect, type RequestEvent } from "@sveltejs/kit";
 import { sessionSlug, type SessionUser } from "./auth.ts";
 import { accessFor, canWrite, type Access } from "./access.ts";
+import { AVATAR_MAX_BYTES } from "./avatars.ts";
 import {
   isRepoPublic,
   listRefs,
@@ -112,4 +113,21 @@ export function field(form: FormData, name: string): string {
 /** The ?h= suffix that keeps a non-default revision across links */
 export function revQuery(rev: string, head: string): string {
   return rev === head ? "" : `?h=${encodeURIComponent(rev)}`;
+}
+
+/** The image file in a multipart form field, refusing oversized bodies before reading them */
+export async function uploadedImage(event: RequestEvent, name: string): Promise<Uint8Array> {
+  // The server has no body limit of its own; the extra 64 KB covers the multipart wrapping
+  const length = Number(event.request.headers.get("content-length"));
+  if (!length || length > AVATAR_MAX_BYTES + 64 * 1024) {
+    fail("image too large", `Images can be up to ${AVATAR_MAX_BYTES / (1024 * 1024)} MB.`, 413);
+  }
+
+  const form = await event.request.formData();
+  const file = form.get(name);
+  return file instanceof File ? new Uint8Array(await file.arrayBuffer()) : new Uint8Array();
+}
+
+export function notAnImage(): never {
+  fail("not an image", `Upload a PNG, JPEG, GIF or WebP image, up to ${AVATAR_MAX_BYTES / (1024 * 1024)} MB.`);
 }

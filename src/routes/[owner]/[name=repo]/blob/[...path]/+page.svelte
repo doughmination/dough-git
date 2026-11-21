@@ -17,7 +17,7 @@
 <Meta
   title={data.path}
   description="{data.path} in {data.owner}/{data.name}."
-  image={data.ownerPicture}
+  image={data.embedImage}
 />
 
 <div class="page">

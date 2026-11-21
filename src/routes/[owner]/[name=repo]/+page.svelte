@@ -13,6 +13,7 @@
   import IcDownload from "~icons/ic/outline-download";
   import IcHelpOutline from "~icons/ic/outline-help-outline";
   import IcHome from "~icons/ic/outline-home";
+  import IcImage from "~icons/ic/outline-image";
   import IcLock from "~icons/ic/outline-lock";
   import IcLockOpen from "~icons/ic/outline-lock-open";
   import IcOpenInNew from "~icons/ic/outline-open-in-new";
@@ -24,6 +25,7 @@
   import IcRefresh from "~icons/ic/outline-refresh";
   import IcSave from "~icons/ic/outline-save";
   import IcSettings from "~icons/ic/outline-settings";
+  import IcUpload from "~icons/ic/outline-upload";
   import IcStickyNote2 from "~icons/ic/outline-sticky-note-2";
   import IcStorage from "~icons/ic/outline-storage";
   import IcWarning from "~icons/ic/outline-warning";
@@ -55,13 +57,18 @@
   {title}
   description={data.metaDescription}
   noindex={!data.isPublic}
-  image={data.ownerPicture}
+  image={data.embedImage}
 />
 
 <div class="page">
   <div class="page-head">
     <p class="eyebrow">repository</p>
-    <h1><a class="owner" href="/{data.owner}">{data.owner}</a>/{data.name}</h1>
+    <h1 class="repo-title">
+      {#if data.repoImage}
+        <img class="repo-image" src={data.repoImage} alt="" width="48" height="48" />
+      {/if}
+      <span><a class="owner" href="/{data.owner}">{data.owner}</a>/{data.name}</span>
+    </h1>
     <p class="muted meta">
       <Visibility isPublic={data.isPublic} />
       {#if data.canPush && !data.isOwner}
@@ -214,6 +221,23 @@ git push --mirror mirror</code></pre>
       </ConfirmForm>
     </div>
 
+    <h2 class="section-title"><IcImage class="icon" width="20" height="20" />Image</h2>
+    <p class="muted">
+      Shown beside the name and in link embeds, in place of your avatar. Private repositories keep your avatar in
+      embeds, since Discord can't fetch their image.
+    </p>
+    <section class="panel">
+      <form method="post" action="?/image" enctype="multipart/form-data" class="row">
+        <input type="file" name="image" accept="image/png,image/jpeg,image/gif,image/webp" aria-label="repository image" required />
+        <button type="submit" class="primary"><IcUpload class="icon" width="16" height="16" />upload</button>
+      </form>
+      {#if data.repoImage}
+        <ConfirmForm action="?/removeImage" prompt="Remove the image from {title}?">
+          <button type="submit" class="danger"><IcDelete class="icon" width="16" height="16" />remove image</button>
+        </ConfirmForm>
+      {/if}
+    </section>
+
     <h2 class="section-title"><IcPeople class="icon" width="20" height="20" />Collaborators</h2>
     <p class="muted">
       People here can see this repository even while it is private. <code>write</code> also lets them push to it.
@@ -264,6 +288,24 @@ git push --mirror mirror</code></pre>
   .owner {
     color: var(--muted);
     text-decoration: none;
+  }
+
+  .repo-title {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+  }
+
+  .repo-image {
+    flex-shrink: 0;
+    border-radius: 0.75rem;
+    outline: 1px solid var(--line);
+    object-fit: cover;
+  }
+
+  .repo-title span {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 
   .mirrors {

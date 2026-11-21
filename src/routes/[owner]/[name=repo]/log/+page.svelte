@@ -17,7 +17,7 @@
 <Meta
   title="{title} log"
   description="Commit history for {title} on {data.rev}."
-  image={data.ownerPicture}
+  image={data.embedImage}
 />
 
 <div class="page">

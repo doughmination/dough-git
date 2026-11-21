@@ -9,7 +9,7 @@ import { AVATAR_MAX_BYTES, removeAvatar, saveAvatar } from "#lib/server/avatars.
 import { findUserBySlug } from "#lib/server/users.ts";
 import { getSettings, setDiscordWebhook, setPrefs } from "#lib/server/settings.ts";
 import { discordWebhookUrl, maskWebhook } from "#lib/server/urls.ts";
-import { fail, field, me } from "#lib/server/web.ts";
+import { fail, field, me, notAnImage, uploadedImage } from "#lib/server/web.ts";
 
 export const load: PageServerLoad = async (event) => {
   const slug = sessionSlug(me(event));
@@ -52,19 +52,7 @@ export const actions: Actions = {
 
   avatar: async (event) => {
     const slug = sessionSlug(me(event));
-
-    // Refuse oversized bodies before reading them; the server has no body limit of its own
-    const length = Number(event.request.headers.get("content-length"));
-    if (!length || length > AVATAR_MAX_BYTES + 64 * 1024) {
-      fail("image too large", `Avatars can be up to ${AVATAR_MAX_BYTES / (1024 * 1024)} MB.`, 413);
-    }
-
-    const form = await event.request.formData();
-    const file = form.get("avatar");
-    const bytes = file instanceof File ? new Uint8Array(await file.arrayBuffer()) : new Uint8Array();
-    if (!(await saveAvatar(slug, bytes))) {
-      fail("not an image", "Upload a PNG, JPEG, GIF or WebP image, up to 4 MB.");
-    }
+    if (!(await saveAvatar(slug, await uploadedImage(event, "avatar")))) notAnImage();
     redirect(303, "/settings?saved=1");
   },
 

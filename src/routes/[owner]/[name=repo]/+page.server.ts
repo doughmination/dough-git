@@ -9,6 +9,7 @@ import { config } from "#lib/server/config.ts";
 import { sessionSlug } from "#lib/server/auth.ts";
 import { findUserBySlug } from "#lib/server/users.ts";
 import { siteRole } from "#lib/server/roles.ts";
+import { removeRepoImage, saveRepoImage } from "#lib/server/avatars.ts";
 import { getSettings } from "#lib/server/settings.ts";
 import { clearRepoMetadata } from "#lib/server/repometa.ts";
 import { notifyRepoDeleted } from "#lib/server/notify.ts";
@@ -52,7 +53,9 @@ import {
   fail,
   field,
   me,
+  notAnImage,
   ownedRef,
+  uploadedImage,
   revQuery,
   viewable,
   writableRef,
@@ -147,6 +150,18 @@ export const actions: Actions = {
     const ref = await writableRef(event);
     const form = await event.request.formData();
     await setDescription(ref, field(form, "description"));
+    back(ref);
+  },
+
+  image: async (event) => {
+    const ref = await ownedRef(event);
+    if (!(await saveRepoImage(ref, await uploadedImage(event, "image")))) notAnImage();
+    back(ref);
+  },
+
+  removeImage: async (event) => {
+    const ref = await ownedRef(event);
+    await removeRepoImage(ref);
     back(ref);
   },
 

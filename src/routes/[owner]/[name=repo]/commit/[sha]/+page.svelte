@@ -18,7 +18,7 @@
 <Meta
   title={commit.subject}
   description="{commit.subject} — {commit.author} in {data.owner}/{data.name}."
-  image={data.ownerPicture}
+  image={data.embedImage}
 />
 
 <div class="page">

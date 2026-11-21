@@ -18,7 +18,12 @@ const {
   readAvatar,
   removeAvatar,
   AVATAR_MAX_BYTES,
+  saveRepoImage,
+  readRepoImage,
+  removeRepoImage,
+  repoImageVersion,
 } = await import("../src/lib/server/avatars.ts");
+const { createRepo, trashRepo, restoreFromTrash } = await import("../src/lib/server/git.ts");
 const { rememberUser, findUserBySlug } = await import("../src/lib/server/users.ts");
 
 let failures = 0;
@@ -70,6 +75,26 @@ await removeAvatar("ari");
 check("removing clears the file", await readAvatar("ari") === null);
 await rememberUser(user);
 check("the sso picture returns on the next sign-in", (await findUserBySlug("ari")).picture === user.picture);
+
+const { ref } = await createRepo("ari", "notes");
+
+check("a repo starts with no image", await repoImageVersion(ref) === null);
+check("a non-image repo upload is refused", await saveRepoImage(ref, text("<svg/>")) === false);
+check("a png repo image is stored", await saveRepoImage(ref, png) === true);
+check("it reads back as a png", (await readRepoImage(ref))?.type === "image/png");
+check("it has a version for cache busting", typeof (await repoImageVersion(ref)) === "number");
+
+const trashed = await trashRepo(ref, {
+  deletedAt: 1,
+  deletedBy: "ari",
+  grants: [],
+});
+check("a trashed repo's image is gone from its old place", await readRepoImage(ref) === null);
+await restoreFromTrash("ari", trashed.entry);
+check("restoring brings the image back", (await readRepoImage(ref))?.type === "image/png");
+
+await removeRepoImage(ref);
+check("removing clears the repo image", await repoImageVersion(ref) === null);
 
 rmSync(root, { recursive: true, force: true });
 if (failures) Deno.exit(1);
